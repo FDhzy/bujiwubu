@@ -29,7 +29,7 @@ version = 1.0.0
 
 # (list) Application requirements
 # Note: tflite_runtime is used for ML inference on Android
-requirements = python3,kivy==2.2.1,numpy,pillow,opencv,pyjnius,plyer,android,tflite_runtime
+requirements = python3,kivy==2.2.1,numpy,pillow,opencv,pyjnius,plyer,android
 
 # (str) Custom source folders for requirements
 # requirements.source.kivy = ../../kivy
