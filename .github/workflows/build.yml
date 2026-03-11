@@ -60,7 +60,40 @@ jobs:
 
       - name: Build APK
         run: |
+          # First run - downloads sources but may fail on 'long' type
           echo y | buildozer android debug 2>&1 | tee build.log || true
+          # Patch ALL .pxi and .pyx files with Python 2 'long' type
+          python3 -c "
+import glob, os
+patterns = [
+    os.path.expanduser('~/.buildozer/**/*.pxi'),
+    os.path.expanduser('~/.buildozer/**/*.pyx'),
+    '.buildozer/**/*.pxi',
+    '.buildozer/**/*.pyx',
+]
+patched = 0
+for pat in patterns:
+    for f in glob.glob(pat, recursive=True):
+        try:
+            content = open(f, encoding='utf-8', errors='ignore').read()
+            if 'long' not in content:
+                continue
+            new = content
+            new = new.replace('return long(', 'return int(')
+            new = new.replace('(int, long)', 'int')
+            new = new.replace('isinstance(arg, long)', 'isinstance(arg, int)')
+            new = new.replace('isinstance(py_arg, long)', 'isinstance(py_arg, int)')
+            new = new.replace('(long)', '(int)')
+            if new != content:
+                open(f, 'w', encoding='utf-8').write(new)
+                print('Patched:', f)
+                patched += 1
+        except Exception as e:
+            print('Skip:', f, e)
+print('Total patched:', patched)
+"
+          # Second run after patching
+          echo y | buildozer android debug 2>&1 | tee -a build.log || true
           echo "=== BUILD COMPLETE ==="
           ls -la bin/ 2>&1 || echo "No bin directory"
 
