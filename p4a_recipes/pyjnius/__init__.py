@@ -1,7 +1,6 @@
 from pythonforandroid.recipe import CythonRecipe
-from pythonforandroid.util import current_directory
 from os.path import join
-import sh
+import glob
 
 
 class PyjniusRecipe(CythonRecipe):
@@ -18,7 +17,6 @@ class PyjniusRecipe(CythonRecipe):
     def patch_long_type(self, arch):
         """Fix Python 2 'long' type usage in pyjnius for Python 3 compatibility"""
         build_dir = self.get_build_dir(arch.arch)
-        import glob, os
         pxi_files = glob.glob(join(build_dir, '**', '*.pxi'), recursive=True)
         pxi_files += glob.glob(join(build_dir, '**', '*.pyx'), recursive=True)
         for fpath in pxi_files:
