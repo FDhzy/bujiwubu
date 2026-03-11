@@ -61,13 +61,11 @@ jobs:
       - name: Build APK
         run: |
           echo y | buildozer android debug 2>&1 | tee build.log || true
-          # If wheel conflict, patch and retry
-          if grep -q "wheel" build.log && grep -q "Cannot install" build.log; then
-            P4A=$(find ~/.buildozer -name "setup.py" -path "*/python-for-android/*" 2>/dev/null | head -1)
-            if [ -n "$P4A" ]; then
-              sed -i "s/wheel~=0\.43\.0/wheel>=0.40/" "$P4A"
-              echo "Patched $P4A"
-            fi
+          # Patch pyjnius 'long' issue for Python 3
+          JNIUS_PXI=$(find ~/.buildozer .buildozer -name 'jnius_utils.pxi' 2>/dev/null | head -1)
+          if [ -n "$JNIUS_PXI" ]; then
+            sed -i 's/isinstance(arg, long)/isinstance(arg, int)/g' "$JNIUS_PXI"
+            echo "Patched jnius_utils.pxi: $JNIUS_PXI"
             echo y | buildozer android debug 2>&1 | tee -a build.log || true
           fi
           echo "=== BUILD COMPLETE ==="
