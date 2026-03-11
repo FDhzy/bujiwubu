@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload build log on failure
         uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
           name: build-log
           path: build.log
