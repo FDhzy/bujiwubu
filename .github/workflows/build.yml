@@ -60,14 +60,18 @@ jobs:
 
       - name: Build APK
         run: |
+          # First run - will fail on pyjnius 'long' issue, but downloads sources
           echo y | buildozer android debug 2>&1 | tee build.log || true
-          # Patch pyjnius 'long' issue for Python 3
-          JNIUS_PXI=$(find ~/.buildozer .buildozer -name 'jnius_utils.pxi' 2>/dev/null | head -1)
-          if [ -n "$JNIUS_PXI" ]; then
-            sed -i 's/isinstance(arg, long)/isinstance(arg, int)/g' "$JNIUS_PXI"
-            echo "Patched jnius_utils.pxi: $JNIUS_PXI"
-            echo y | buildozer android debug 2>&1 | tee -a build.log || true
-          fi
+          # Patch ALL pyjnius .pxi files that use 'long' (Python 2 type)
+          find ~/.buildozer .buildozer -name '*.pxi' -path '*/jnius/*' 2>/dev/null | while read f; do
+            if grep -q 'isinstance.*long' "$f"; then
+              sed -i 's/isinstance(\(.*\), long)/isinstance(\1, int)/g' "$f"
+              sed -i 's/isinstance(\(.*\), (int, long))/isinstance(\1, int)/g' "$f"
+              echo "Patched: $f"
+            fi
+          done
+          # Second run after patch
+          echo y | buildozer android debug 2>&1 | tee -a build.log || true
           echo "=== BUILD COMPLETE ==="
           ls -la bin/ 2>&1 || echo "No bin directory"
 
