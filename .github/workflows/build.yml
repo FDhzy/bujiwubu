@@ -42,21 +42,21 @@ jobs:
           P4A_SETUP=$(python -c "import buildozer; import os; print(os.path.join(os.path.dirname(buildozer.__file__), '..', 'python_for_android'))" 2>/dev/null || echo "")
           echo "p4a path: $P4A_SETUP"
 
-      - name: Cache buildozer global directory
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-global-
+      # - name: Cache buildozer global directory
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.buildozer
+      #     key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+      #     restore-keys: |
+      #       buildozer-global-
 
-      - name: Cache buildozer local directory
-        uses: actions/cache@v4
-        with:
-          path: .buildozer
-          key: buildozer-local-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-local-
+      # - name: Cache buildozer local directory
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: .buildozer
+      #     key: buildozer-local-${{ hashFiles('buildozer.spec') }}
+      #     restore-keys: |
+      #       buildozer-local-
 
       - name: Build APK
         run: |
