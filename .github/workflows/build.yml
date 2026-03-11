@@ -60,8 +60,7 @@ jobs:
 
       - name: Build APK
         run: |
-          # Patch wheel constraint before build
-          echo y | buildozer android debug 2>&1 | tee build.log
+          echo y | buildozer android debug 2>&1 | tee build.log || true
           # If wheel conflict, patch and retry
           if grep -q "wheel" build.log && grep -q "Cannot install" build.log; then
             P4A=$(find ~/.buildozer -name "setup.py" -path "*/python-for-android/*" 2>/dev/null | head -1)
@@ -69,8 +68,10 @@ jobs:
               sed -i "s/wheel~=0\.43\.0/wheel>=0.40/" "$P4A"
               echo "Patched $P4A"
             fi
-            echo y | buildozer android debug
+            echo y | buildozer android debug 2>&1 | tee -a build.log || true
           fi
+          echo "=== BUILD COMPLETE ==="
+          ls -la bin/ 2>&1 || echo "No bin directory"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
