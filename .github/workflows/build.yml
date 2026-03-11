@@ -60,16 +60,36 @@ jobs:
 
       - name: Build APK
         run: |
-          # First run - will fail on pyjnius 'long' issue, but downloads sources
+          # First run - downloads pyjnius source but fails on 'long' type
           echo y | buildozer android debug 2>&1 | tee build.log || true
-          # Patch ALL pyjnius .pxi files that use 'long' (Python 2 type)
-          find ~/.buildozer .buildozer -name '*.pxi' -path '*/jnius/*' 2>/dev/null | while read f; do
-            if grep -q 'isinstance.*long' "$f"; then
-              sed -i 's/isinstance(\(.*\), long)/isinstance(\1, int)/g' "$f"
-              sed -i 's/isinstance(\(.*\), (int, long))/isinstance(\1, int)/g' "$f"
-              echo "Patched: $f"
-            fi
-          done
+          # Patch pyjnius files using Python (more reliable than sed regex)
+          python3 - <<'EOF'
+import os, glob
+for pattern in [
+    os.path.expanduser('~/.buildozer/**/*.pxi'),
+    '.buildozer/**/*.pxi'
+]:
+    for f in glob.glob(pattern, recursive=True):
+        if 'jnius' not in f:
+            continue
+        with open(f, 'r', encoding='utf-8', errors='ignore') as fh:
+            content = fh.read()
+        if 'long' not in content:
+            continue
+        new_content = content.replace(
+            'isinstance(arg, long)', 'isinstance(arg, int)'
+        ).replace(
+            'isinstance(arg, (int, long))', 'isinstance(arg, int)'
+        ).replace(
+            'isinstance(py_arg, (int, long))', 'isinstance(py_arg, int)'
+        ).replace(
+            'isinstance(py_arg, long)', 'isinstance(py_arg, int)'
+        )
+        if new_content != content:
+            with open(f, 'w', encoding='utf-8') as fh:
+                fh.write(new_content)
+            print(f'Patched: {f}')
+EOF
           # Second run after patch
           echo y | buildozer android debug 2>&1 | tee -a build.log || true
           echo "=== BUILD COMPLETE ==="
