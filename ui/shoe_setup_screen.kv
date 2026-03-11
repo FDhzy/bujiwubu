@@ -1,0 +1,115 @@
+# Kivy UI Layout for Shoe Setup Screen
+# Accessible design for blind users
+
+<ShoeSetupScreen>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: 'assets/images/background.png'
+    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(15)
+        spacing: dp(10)
+        
+        # Camera preview area with status text overlay
+        FloatLayout:
+            size_hint_y: 0.6
+            
+            # Camera preview (background)
+            Image:
+                id: shoe_preview
+                allow_stretch: True
+                keep_ratio: True
+                size_hint: 1, 1
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            
+            # Status text overlay (on top of camera)
+            Label:
+                id: status_label
+                text: root.status_text
+                font_name: 'ChineseFont'
+                font_size: sp(20)
+                bold: True
+                color: 0, 0, 0, 1
+                halign: 'center'
+                valign: 'top'
+                text_size: self.size
+                padding: dp(10), dp(10)
+                size_hint: 1, None
+                height: dp(60)
+                pos_hint: {'top': 1, 'center_x': 0.5}
+        
+        # Capture button
+        AccessibleButton:
+            id: capture_btn
+            text: "拍摄照片"
+            font_name: 'ChineseFont'
+            font_size: sp(28)
+            bold: True
+            size_hint_y: 0.25
+            background_color: 0.93, 0.95, 0.98, 1
+            color: 0.0706, 0.1647, 0.1804, 1
+            on_release: root.capture_photo()
+        
+        # Manual shoe type selection (fallback) - Hidden
+        # BoxLayout:
+        #     orientation: 'horizontal'
+        #     size_hint_y: 0.13
+        #     spacing: dp(5)
+        #     
+        #     ShoeTypeButton:
+        #         text: "凉鞋"
+        #         font_name: 'ChineseFont'
+        #         on_release: root.select_shoe_type('sandals')
+        #     
+        #     ShoeTypeButton:
+        #         text: "鞋子"
+        #         font_name: 'ChineseFont'
+        #         on_release: root.select_shoe_type('low_shoes')
+        #     
+        #     ShoeTypeButton:
+        #         text: "靴子"
+        #         font_name: 'ChineseFont'
+        #         on_release: root.select_shoe_type('boots')
+        #     
+        #     ShoeTypeButton:
+        #         text: "雨靴"
+        #         font_name: 'ChineseFont'
+        #         on_release: root.select_shoe_type('high_boots')
+        
+        # Bottom buttons
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.15
+            spacing: dp(10)
+            
+            # Exit button
+            AccessibleButton:
+                id: exit_btn
+                text: "退出"
+                font_name: 'ChineseFont'
+                font_size: sp(24)
+                size_hint_x: 1.0
+                background_color: 0.8, 0.2, 0.2, 1
+                on_release: root.exit_setup()
+
+
+<ShoeTypeButton@Button>:
+    font_name: 'ChineseFont'
+    font_size: sp(14)
+    size_hint_x: 0.25
+    background_normal: ''
+    background_color: 0.3, 0.3, 0.4, 1
+    color: 1, 1, 1, 1
+    
+    canvas.before:
+        Color:
+            rgba: self.background_color
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(8)]

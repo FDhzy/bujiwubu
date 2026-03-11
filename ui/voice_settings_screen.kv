@@ -1,0 +1,222 @@
+<VoiceSettingsScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.07, 0.09, 0.12, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(30)
+        spacing: dp(20)
+
+        Label:
+            text: "声音设置"
+            font_name: 'ChineseFont'
+            font_size: sp(36)
+            bold: True
+            size_hint_y: 0.1
+            color: 1, 1, 1, 1
+
+        ScrollView:
+            size_hint_y: 0.65
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                spacing: dp(25)
+
+                # 音色选择
+                Label:
+                    text: "[b]音色选择[/b]"
+                    markup: True
+                    font_name: 'ChineseFont'
+                    font_size: sp(22)
+                    text_size: self.width, None
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    color: 1, 0.8, 0.4, 1
+                    halign: 'left'
+
+                GridLayout:
+                    cols: 2
+                    size_hint_y: None
+                    height: dp(110)
+                    spacing: dp(10)
+                    padding: [0, dp(5)]
+
+                    ToggleButton:
+                        id: voice_female
+                        text: "晓晓\n活泼女声"
+                        font_name: 'ChineseFont'
+                        font_size: sp(16)
+                        group: 'voice_type'
+                        state: 'down' if root.current_voice == 'female' else 'normal'
+                        on_press: root.on_voice_type_selected('female')
+                        background_color: (0.3, 0.6, 0.9, 1) if self.state == 'down' else (0.3, 0.3, 0.35, 1)
+
+                    ToggleButton:
+                        id: voice_male
+                        text: "云健\n稳重男声"
+                        font_name: 'ChineseFont'
+                        font_size: sp(16)
+                        group: 'voice_type'
+                        state: 'down' if root.current_voice == 'male' else 'normal'
+                        on_press: root.on_voice_type_selected('male')
+                        background_color: (0.3, 0.6, 0.9, 1) if self.state == 'down' else (0.3, 0.3, 0.35, 1)
+
+                    ToggleButton:
+                        id: voice_female2
+                        text: "晓伊\n温柔女声"
+                        font_name: 'ChineseFont'
+                        font_size: sp(16)
+                        group: 'voice_type'
+                        state: 'down' if root.current_voice == 'female2' else 'normal'
+                        on_press: root.on_voice_type_selected('female2')
+                        background_color: (0.3, 0.6, 0.9, 1) if self.state == 'down' else (0.3, 0.3, 0.35, 1)
+
+                    ToggleButton:
+                        id: voice_male2
+                        text: "云希\n年轻男声"
+                        font_name: 'ChineseFont'
+                        font_size: sp(16)
+                        group: 'voice_type'
+                        state: 'down' if root.current_voice == 'male2' else 'normal'
+                        on_press: root.on_voice_type_selected('male2')
+                        background_color: (0.3, 0.6, 0.9, 1) if self.state == 'down' else (0.3, 0.3, 0.35, 1)
+
+                # 语速调节
+                Label:
+                    text: "[b]语速调节[/b]"
+                    markup: True
+                    font_name: 'ChineseFont'
+                    font_size: sp(22)
+                    text_size: self.width, None
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    color: 1, 0.8, 0.4, 1
+                    halign: 'left'
+
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: dp(80)
+                    spacing: dp(10)
+
+                    Label:
+                        text: f"当前语速: {int(speech_rate_slider.value)}%"
+                        font_name: 'ChineseFont'
+                        font_size: sp(18)
+                        color: 0.9, 0.9, 0.9, 1
+
+                    Slider:
+                        id: speech_rate_slider
+                        min: 50
+                        max: 200
+                        value: root.speech_rate
+                        on_value: root.on_speech_rate_change(self.value)
+                        cursor_size: dp(30), dp(30)
+                        cursor_image: ''
+                        cursor_color: 0.3, 0.6, 0.9, 1
+                        value_track: True
+                        value_track_color: 0.3, 0.6, 0.9, 1
+
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        size_hint_y: None
+                        height: dp(20)
+
+                        Label:
+                            text: "慢"
+                            font_name: 'ChineseFont'
+                            font_size: sp(14)
+                            color: 0.6, 0.6, 0.6, 1
+                            halign: 'left'
+                            text_size: self.size
+
+                        Label:
+                            text: "快"
+                            font_name: 'ChineseFont'
+                            font_size: sp(14)
+                            color: 0.6, 0.6, 0.6, 1
+                            halign: 'right'
+                            text_size: self.size
+
+                # 音量调节
+                Label:
+                    text: "[b]音量调节[/b]"
+                    markup: True
+                    font_name: 'ChineseFont'
+                    font_size: sp(22)
+                    text_size: self.width, None
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    color: 1, 0.8, 0.4, 1
+                    halign: 'left'
+
+                BoxLayout:
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: dp(80)
+                    spacing: dp(10)
+
+                    Label:
+                        text: f"当前音量: {int(volume_slider.value)}%"
+                        font_name: 'ChineseFont'
+                        font_size: sp(18)
+                        color: 0.9, 0.9, 0.9, 1
+
+                    Slider:
+                        id: volume_slider
+                        min: 0
+                        max: 100
+                        value: root.volume * 100
+                        on_value: root.on_volume_change(self.value)
+                        cursor_size: dp(30), dp(30)
+                        cursor_image: ''
+                        cursor_color: 0.3, 0.6, 0.9, 1
+                        value_track: True
+                        value_track_color: 0.3, 0.6, 0.9, 1
+
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        size_hint_y: None
+                        height: dp(20)
+
+                        Label:
+                            text: "静音"
+                            font_name: 'ChineseFont'
+                            font_size: sp(14)
+                            color: 0.6, 0.6, 0.6, 1
+                            halign: 'left'
+                            text_size: self.size
+
+                        Label:
+                            text: "最大"
+                            font_name: 'ChineseFont'
+                            font_size: sp(14)
+                            color: 0.6, 0.6, 0.6, 1
+                            halign: 'right'
+                            text_size: self.size
+
+                # 试听按钮
+                AccessibleButton:
+                    text: "试听当前设置"
+                    font_name: 'ChineseFont'
+                    font_size: sp(20)
+                    size_hint_y: None
+                    height: dp(50)
+                    background_color: 0.2, 0.5, 0.7, 1
+                    on_release: root.on_test_voice()
+
+        # 确认按钮
+        AccessibleButton:
+            text: "确认"
+            font_name: 'ChineseFont'
+            font_size: sp(32)
+            bold: True
+            size_hint_y: 0.15
+            background_color: 0.2, 0.6, 0.3, 1
+            on_release: root.on_confirm()

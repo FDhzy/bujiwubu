@@ -1,0 +1,41 @@
+# Blind Navigation Assistant - Dependencies
+# For Android deployment via Buildozer
+
+# Core framework
+kivy>=2.2.1
+kivymd>=1.1.1
+
+# Numerical computing
+numpy>=1.21.0
+
+# Image processing
+opencv-python>=4.5.0
+pillow>=9.0.0
+
+# Machine learning (TFLite for mobile)
+tensorflow>=2.13.0
+
+# Android integration (used by buildozer)
+pyjnius>=1.4.0
+plyer>=2.1.0
+
+# Desktop development fallback (TTS)
+pyttsx3>=2.90
+
+# ModelScope TTS (optional, for high-quality Chinese voices)
+# 推荐：Sambert-Hifigan (1.13GB, 轻量快速)
+# modelscope>=1.9.0
+# soundfile>=0.12.0
+# sounddevice>=0.4.0
+# 
+# 可选：CosyVoice (更大但质量更高)
+# cosyvoice>=0.1.0
+
+# Voice recognition (desktop development)
+SpeechRecognition>=3.10.0
+PyAudio>=0.2.13
+
+# For model conversion (development only)
+# ultralytics>=8.0.0  # YOLOv8
+# onnx>=1.14.0
+# onnxruntime>=1.15.0

@@ -1,0 +1,27 @@
+﻿# 训练数据（太大，不需要构建APK）
+training_data/
+coco_for_obstacle/
+# 模型权重文件
+*.pt
+*.pth
+*.h5
+*.onnx
+*.onnx.data
+*.tflite
+*.pth.wxdownload
+# 大型数据文件
+*.zip
+*.json
+calibration_*.npy
+# 构建缓存
+.buildozer/
+__pycache__/
+*.pyc
+# 运行日志
+runs/
+*.log
+# 临时文件
+mask_check_samples/
+pip_packages*/
+# 转换工具
+convert_tflite.zip

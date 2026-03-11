@@ -1,0 +1,244 @@
+================================================================================
+EXTERNAL SHOE RECOGNITION MODEL - INTEGRATION GUIDE
+================================================================================
+
+This guide explains how to plug in your own trained ML model for shoe
+recognition to improve accuracy beyond the built-in computer vision method.
+
+================================================================================
+QUICK START
+================================================================================
+
+1. Prepare your model file:
+   - TensorFlow Lite (.tflite) - Recommended for mobile
+   - TensorFlow SavedModel
+   - ONNX (.onnx)
+   - Or any format with custom wrapper
+
+2. Use one of these integration methods:
+
+   METHOD A - TensorFlow Lite Model (Simplest):
+   --------------------------------------------------------
+   from models.shoe_analyzer import ShoeAnalyzer, TensorFlowShoeModel
+   
+   # Load your model
+   model = TensorFlowShoeModel()
+   model.load_model("path/to/your_model.tflite")
+   
+   # Create analyzer with your model
+   analyzer = ShoeAnalyzer(language="en", external_model=model)
+   
+   # Use as normal
+   result = analyzer.analyze(image)
+
+
+   METHOD B - Custom Function:
+   --------------------------------------------------------
+   from models.shoe_analyzer import ShoeAnalyzer, CustomModelAdapter, ShoeType
+   
+   def my_predictor(image):
+       # Your ML inference code here
+       # Return (ShoeType, confidence)
+       return ShoeType.LOW_SHOES, 0.85
+   
+   model = CustomModelAdapter(my_predictor)
+   analyzer = ShoeAnalyzer(language="en", external_model=model)
+
+
+   METHOD C - Custom Model Class:
+   --------------------------------------------------------
+   from models.shoe_analyzer import ExternalShoeModel, ShoeType
+   
+   class MyModel(ExternalShoeModel):
+       def load_model(self, path):
+           # Load your model
+           return True
+       
+       def predict(self, image):
+           # Run inference
+           return ShoeType.BOOTS, 0.90
+   
+   model = MyModel()
+   model.load_model("path/to/model")
+   analyzer = ShoeAnalyzer(language="en", external_model=model)
+
+================================================================================
+MODEL REQUIREMENTS
+================================================================================
+
+Your model must classify images into one of these 5 categories:
+
+Class 0: SANDALS      (凉鞋)      - Open shoes, flip-flops
+Class 1: LOW_SHOES    (低帮鞋)    - Sneakers, casual shoes  
+Class 2: ANKLE_SHOES  (踝靴)      - Ankle boots, high-tops
+Class 3: BOOTS        (靴子)      - Mid-calf boots
+Class 4: HIGH_BOOTS   (雨靴)      - Rain boots, knee-high boots
+
+Input: RGB image (any size, will be resized)
+Output: 5-class probabilities or class index + confidence
+
+================================================================================
+INTEGRATION INTO MAIN APP
+================================================================================
+
+To use your model in the application, modify the initialization in:
+ui/shoe_setup_screen.py or ui/shoe_type_choice_screen.py
+
+Example:
+
+    # In __init__ or on_enter method:
+    from models.shoe_analyzer import ShoeAnalyzer, TensorFlowShoeModel
+    
+    # Try to load external model
+    try:
+        external_model = TensorFlowShoeModel()
+        model_path = "assets/models/my_shoe_classifier.tflite"
+        
+        if external_model.load_model(model_path):
+            self.shoe_analyzer = ShoeAnalyzer(
+                language=self.app.app_config.language,
+                external_model=external_model
+            )
+            print("Using external shoe recognition model")
+        else:
+            # Fall back to built-in
+            self.shoe_analyzer = ShoeAnalyzer(
+                language=self.app.app_config.language
+            )
+    except Exception as e:
+        print(f"External model failed: {e}")
+        self.shoe_analyzer = ShoeAnalyzer(
+            language=self.app.app_config.language
+        )
+
+================================================================================
+TRAINING YOUR OWN MODEL
+================================================================================
+
+1. Collect Training Data:
+   - 100-500 images per class (5 classes = 500-2500 total images)
+   - Diverse angles, lighting, colors, styles
+   - Side view of shoes most important
+   - You can use web scraping (respect copyright) or existing datasets
+
+2. Recommended Architectures:
+   - MobileNetV2 (fast, mobile-friendly)
+   - EfficientNet-Lite (good accuracy/speed balance)
+   - ResNet50 (higher accuracy, slower)
+
+3. Training Framework:
+   TensorFlow/Keras example:
+   
+   import tensorflow as tf
+   
+   # Load pre-trained model
+   base_model = tf.keras.applications.MobileNetV2(
+       input_shape=(224, 224, 3),
+       include_top=False,
+       weights='imagenet'
+   )
+   
+   # Add classification head
+   model = tf.keras.Sequential([
+       base_model,
+       tf.keras.layers.GlobalAveragePooling2D(),
+       tf.keras.layers.Dense(128, activation='relu'),
+       tf.keras.layers.Dropout(0.5),
+       tf.keras.layers.Dense(5, activation='softmax')  # 5 shoe types
+   ])
+   
+   # Train on your data
+   model.compile(
+       optimizer='adam',
+       loss='categorical_crossentropy',
+       metrics=['accuracy']
+   )
+   
+   model.fit(train_data, epochs=20, validation_data=val_data)
+   
+   # Convert to TFLite
+   converter = tf.lite.TFLiteConverter.from_keras_model(model)
+   tflite_model = converter.convert()
+   
+   with open('shoe_classifier.tflite', 'wb') as f:
+       f.write(tflite_model)
+
+4. Validate:
+   - Test accuracy should be > 70% for acceptable performance
+   - Ensure balanced performance across all 5 classes
+   - Test with real-world images (not just training data)
+
+================================================================================
+FALLBACK BEHAVIOR
+================================================================================
+
+The system is designed with robust fallback:
+
+1. External model runs first (if provided)
+2. If confidence < 30%, falls back to built-in CV method
+3. If external model fails/crashes, uses CV method
+4. If everything fails, returns UNKNOWN type with safe defaults
+
+This ensures the app always works, even if your model has issues.
+
+================================================================================
+TESTING YOUR INTEGRATION
+================================================================================
+
+Use the test script:
+
+    python external_model_example.py
+
+Or test manually:
+
+    import cv2
+    from models.shoe_analyzer import ShoeAnalyzer, TensorFlowShoeModel
+    
+    # Load model
+    model = TensorFlowShoeModel()
+    model.load_model("your_model.tflite")
+    
+    # Create analyzer
+    analyzer = ShoeAnalyzer(external_model=model)
+    
+    # Test with image
+    image = cv2.imread("test_shoe.jpg")
+    result = analyzer.analyze(image)
+    
+    print(f"Type: {result.shoe_type.value}")
+    print(f"Confidence: {result.confidence:.2%}")
+    print(f"Safe depth: {result.safe_puddle_depth_cm:.1f}cm")
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Q: Model not loading?
+A: Check file path, ensure TensorFlow is installed, verify .tflite format
+
+Q: Low accuracy?
+A: Need more training data, try different architecture, check preprocessing
+
+Q: Slow inference?
+A: Use TFLite instead of full TensorFlow, use smaller model (MobileNet)
+
+Q: Wrong predictions?
+A: Verify class mapping matches your training labels, check image preprocessing
+
+Q: App crashes?
+A: External model has error - check logs, ensure proper exception handling
+
+================================================================================
+SUPPORT
+================================================================================
+
+For more examples, see: external_model_example.py
+For model implementation, see: models/shoe_analyzer.py
+
+Key classes:
+- ExternalShoeModel: Base class to implement
+- TensorFlowShoeModel: Ready-to-use for TFLite models
+- CustomModelAdapter: Wrap any prediction function
+- ShoeAnalyzer: Main analyzer that uses your model
+
+================================================================================

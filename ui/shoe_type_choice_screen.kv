@@ -1,0 +1,185 @@
+# Kivy UI Layout for Shoe Type Choice Screen
+# 鞋型选择界面
+
+<ShoeTypeChoiceScreen>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: 'assets/images/background.png'
+    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(15)
+        
+        # Top area - Status/Prompt section (no background, white text only)
+        BoxLayout:
+            size_hint_y: 0.12
+            
+            Label:
+                id: status_label
+                text: "请选择您的鞋型"
+                font_name: 'ChineseFont'
+                font_size: sp(28)
+                bold: True
+                color: 1, 1, 1, 1
+                halign: 'center'
+                valign: 'middle'
+                text_size: self.size
+                padding: dp(10), dp(5)
+        
+        # Spacer
+        Widget:
+            size_hint_y: 0.03
+        
+        # 2x2 Grid for shoe type buttons
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.6
+            spacing: dp(20)
+            padding: [dp(30), 0, dp(30), 0]
+            
+            # First row - 凉鞋 and 低帮鞋
+            BoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(20)
+                size_hint_y: 0.5
+                
+                ShoeTypeChoiceButton:
+                    id: sandals_btn
+                    text: "凉鞋"
+                    font_name: 'ChineseFont'
+                    font_size: sp(36)
+                    bold: True
+                    background_color: 0.93, 0.95, 0.98, 1
+                    color: 0.0706, 0.1647, 0.1804, 1
+                    on_release: root.on_shoe_type_selected('sandals')
+                    
+                ShoeTypeChoiceButton:
+                    id: shoes_btn
+                    text: "低帮鞋"
+                    font_name: 'ChineseFont'
+                    font_size: sp(36)
+                    bold: True
+                    background_color: 0.93, 0.95, 0.98, 1
+                    color: 0.0706, 0.1647, 0.1804, 1
+                    on_release: root.on_shoe_type_selected('low_shoes')
+            
+            # Second row - 靴子 and 雨靴
+            BoxLayout:
+                orientation: 'horizontal'
+                spacing: dp(20)
+                size_hint_y: 0.5
+                
+                ShoeTypeChoiceButton:
+                    id: boots_btn
+                    text: "靴子"
+                    font_name: 'ChineseFont'
+                    font_size: sp(36)
+                    bold: True
+                    background_color: 0.93, 0.95, 0.98, 1
+                    color: 0.0706, 0.1647, 0.1804, 1
+                    on_release: root.on_shoe_type_selected('boots')
+                    
+                ShoeTypeChoiceButton:
+                    id: rain_boots_btn
+                    text: "雨靴"
+                    font_name: 'ChineseFont'
+                    font_size: sp(36)
+                    bold: True
+                    background_color: 0.93, 0.95, 0.98, 1
+                    color: 0.0706, 0.1647, 0.1804, 1
+                    on_release: root.on_shoe_type_selected('high_boots')
+        
+        # Spacer
+        Widget:
+            size_hint_y: 0.03
+        
+        # Bottom buttons
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.15
+            spacing: dp(10)
+            
+            # Exit button
+            AccessibleButton:
+                id: exit_btn
+                text: "退出"
+                font_name: 'ChineseFont'
+                font_size: sp(24)
+                size_hint_x: 1.0
+                background_color: 0.8, 0.2, 0.2, 1
+                on_release: root.on_exit()
+
+
+<ShoeTypeChoiceButton@Button>:
+    # Large touch target for accessibility
+    size_hint_y: 1
+    background_normal: ''
+    color: 1, 1, 1, 1
+    
+    canvas.before:
+        # Shadow effect
+        Color:
+            rgba: 0, 0, 0, 0.15
+        RoundedRectangle:
+            pos: self.x + dp(2), self.y - dp(4)
+            size: self.size
+            radius: [dp(20)]
+        
+        # Button background
+        Color:
+            rgba: self.background_color if self.background_color else (0.3, 0.3, 0.3, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(20)]
+
+
+<ConfirmButton@Button>:
+    # Long confirm button style
+    background_normal: ''
+    color: 1, 1, 1, 1
+    
+    canvas.before:
+        # Shadow effect
+        Color:
+            rgba: 0, 0, 0, 0.2
+        RoundedRectangle:
+            pos: self.x + dp(2), self.y - dp(4)
+            size: self.size
+            radius: [dp(20)]
+        
+        # Button background
+        Color:
+            rgba: self.background_color if self.background_color else (0.2, 0.6, 0.2, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(20)]
+
+
+<ExitButton@Button>:
+    # Exit button style (red)
+    background_normal: ''
+    color: 1, 1, 1, 1
+    
+    canvas.before:
+        # Shadow effect
+        Color:
+            rgba: 0, 0, 0, 0.2
+        RoundedRectangle:
+            pos: self.x + dp(2), self.y - dp(4)
+            size: self.size
+            radius: [dp(20)]
+        
+        # Button background
+        Color:
+            rgba: self.background_color if self.background_color else (0.8, 0.2, 0.2, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(20)]
