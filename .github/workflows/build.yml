@@ -60,9 +60,12 @@ jobs:
 
       - name: Build APK
         run: |
-          echo y | buildozer android debug 2>&1 | tee build.log || true
+          set +e
+          echo y | buildozer android debug 2>&1 | tee build.log
+          echo "First build exit, running patch..."
           python3 patch_long.py
-          echo y | buildozer android debug 2>&1 | tee -a build.log || true
+          echo "Running second build..."
+          echo y | buildozer android debug 2>&1 | tee -a build.log
           echo "=== BUILD COMPLETE ==="
           ls -la bin/ 2>&1 || echo "No bin directory"
 
