@@ -34,13 +34,15 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install "wheel==0.43.0" "setuptools>=68" "packaging>=23"
-          pip install buildozer==1.5.0 cython
+          pip install buildozer==1.5.0 "cython==0.29.37"
 
       - name: Patch p4a wheel constraint
         run: |
           # Fix wheel version conflict in p4a setup.py after first init
           P4A_SETUP=$(python -c "import buildozer; import os; print(os.path.join(os.path.dirname(buildozer.__file__), '..', 'python_for_android'))" 2>/dev/null || echo "")
           echo "p4a path: $P4A_SETUP"
+          # Pre-patch kivy weakproxy.pyx in p4a cache if exists
+          find ~/.buildozer -name 'weakproxy.pyx' 2>/dev/null | xargs -I{} sed -i 's/return long(/return int(/g; s/(int, long)/int/g' {} || true
 
       # - name: Cache buildozer global directory
       #   uses: actions/cache@v4
@@ -62,8 +64,9 @@ jobs:
         run: |
           set +e
           echo y | buildozer android debug 2>&1 | tee build.log
-          echo "First build exit, running patch..."
+          echo "First build exit, running patches..."
           python3 patch_long.py
+          python3 patch_kivy.py
           echo "Running second build..."
           echo y | buildozer android debug 2>&1 | tee -a build.log
           echo "=== BUILD COMPLETE ==="
