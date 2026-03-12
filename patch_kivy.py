@@ -75,4 +75,36 @@ for pat in gstplayer_patterns:
         except Exception as e:
             print('Skip _gstplayer.pyx:', f, e)
 
+# ─── Patch 3: lib2to3 Python2 test data files ───────────────────────────────
+# These files contain Python 2 syntax (print "...") and crash Python 3 compiler
+
+import os
+
+lib2to3_data_patterns = [
+    os.path.expanduser('~/.buildozer/**/lib2to3/tests/data'),
+    '.buildozer/**/lib2to3/tests/data',
+]
+
+py2_files_removed = 0
+for pat in lib2to3_data_patterns:
+    for data_dir in glob.glob(pat, recursive=True):
+        if os.path.isdir(data_dir):
+            for fname in os.listdir(data_dir):
+                if fname.endswith('.py'):
+                    fpath = os.path.join(data_dir, fname)
+                    try:
+                        # Try to compile; if it fails it's Python2 syntax
+                        with open(fpath, encoding='utf-8', errors='ignore') as f:
+                            src = f.read()
+                        try:
+                            compile(src, fpath, 'exec')
+                        except SyntaxError:
+                            # Rename to .py2 so buildozer ignores it
+                            os.rename(fpath, fpath + '2')
+                            print('Disabled py2 file:', fpath)
+                            py2_files_removed += 1
+                    except Exception as e:
+                        print('Skip:', fpath, e)
+
+print(f'Disabled {py2_files_removed} Python2 test files.')
 print('patch_kivy.py done.')
