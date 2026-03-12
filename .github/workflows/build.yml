@@ -63,7 +63,7 @@ jobs:
           # First run - downloads sources but may fail on 'long' type
           echo y | buildozer android debug 2>&1 | tee build.log || true
           # Patch ALL .pxi and .pyx files with Python 2 'long' type
-          python3 -c "
+          cat > /tmp/patch_long.py << 'PYEOF'
 import glob, os
 patterns = [
     os.path.expanduser('~/.buildozer/**/*.pxi'),
@@ -91,7 +91,8 @@ for pat in patterns:
         except Exception as e:
             print('Skip:', f, e)
 print('Total patched:', patched)
-"
+PYEOF
+          python3 /tmp/patch_long.py
           # Second run after patching
           echo y | buildozer android debug 2>&1 | tee -a build.log || true
           echo "=== BUILD COMPLETE ==="
