@@ -1,0 +1,23 @@
+{
+  "method": "trained",
+  "threshold": 0.15,
+  "area": 0.01,
+  "held_positive": 40,
+  "held_dry": 18,
+  "baseline": {
+    "miou": 0.4099455601571268,
+    "precision": 0.20720797809116423,
+    "recall": 0.7418345046198989,
+    "miss": 0,
+    "dry": 18,
+    "dry_coverage": 0.4716158492476852
+  },
+  "candidate": {
+    "miou": 0.3977333189490599,
+    "precision": 0.25163954513018594,
+    "recall": 0.6026058433833394,
+    "miss": 1,
+    "dry": 18,
+    "dry_coverage": 0.3359617332175926
+  }
+}
