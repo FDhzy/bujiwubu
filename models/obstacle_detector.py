@@ -93,50 +93,55 @@ class ObstacleDetector:
         self.nms_threshold = config.yolo_nms_threshold
         self.obstacle_classes = set(config.obstacle_classes)
         
-        # Load model
-        loader = get_model_loader()
-        self.model = loader.load_tflite(
-            config.yolo_model_path,
-            use_gpu=config.use_gpu_delegate,
-            num_threads=config.num_threads
-        )
-        
-        # Check if using dummy model
-        self.use_cv_fallback = isinstance(self.model, DummyModel)
-        
-        # Try to load TFLite obstacle model if primary failed
+        # 优先加载 PyTorch 模型
         self.pytorch_model = None
-        if self.use_cv_fallback:
-            try:
-                self.logger.info("TFLite (primary) not available, trying TFLite obstacle model...")
-                self.pytorch_model = self._load_pytorch_model()
-                if self.pytorch_model is not None:
-                    self.logger.info("✓ TFLite obstacle model loaded successfully")
-                else:
-                    self.logger.warning("✗ TFLite obstacle model failed to load")
-            except Exception as e:
-                self.logger.warning(f"✗ Failed to load TFLite obstacle model: {e}")
+        try:
+            self.logger.info("Loading PyTorch obstacle model (priority)...")
+            self.pytorch_model = self._load_pytorch_model()
+            if self.pytorch_model is not None:
+                self.logger.info("✓ PyTorch obstacle model loaded successfully")
+            else:
+                self.logger.warning("✗ PyTorch model failed to load")
+        except Exception as e:
+            self.logger.warning(f"✗ Failed to load PyTorch model: {e}")
+        
+        # 若 PyTorch 加载失败，尝试 TFLite 作为备用
+        self.model = None
+        self.use_cv_fallback = True
+        if self.pytorch_model is None:
+            self.logger.info("PyTorch unavailable, falling back to TFLite...")
+            loader = get_model_loader()
+            self.model = loader.load_tflite(
+                config.yolo_model_path,
+                use_gpu=config.use_gpu_delegate,
+                num_threads=config.num_threads
+            )
+            self.use_cv_fallback = isinstance(self.model, DummyModel)
         
         if self.use_cv_fallback and self.pytorch_model is None:
             self.logger.info("ML model missing, using CV fallback for obstacle detection")
         
-        if self.model or self.pytorch_model:
+        if self.pytorch_model or self.model:
             self.logger.info("Obstacle detector initialized")
         else:
             self.logger.error("Failed to load obstacle detection model")
     
     def _load_pytorch_model(self):
-        """加载 TFLite 障碍物检测模型"""
+        """加载 PyTorch 障碍物检测模型"""
         try:
+            # 优先加载合并训练的新模型，兜底用旧模型
+            import os
+            model_path = "training_checkpoints/obstacle_merged/weights/best.pt"
+            if not os.path.exists(model_path):
+                model_path = "training_checkpoints/obstacle/best.pt"
+            self.logger.info(f"障碍物模型路径: {model_path}")
             detector = PyTorchObstacleDetector(
-                model_path="training_checkpoints/obstacle_best.tflite",
+                model_path=model_path,
                 conf_threshold=self.conf_threshold
             )
-            if detector.interpreter is not None:
-                return detector
-            return None
+            return detector
         except Exception as e:
-            self.logger.error(f"加载 TFLite 障碍物模型失败: {e}")
+            self.logger.error(f"加载 PyTorch 模型失败: {e}")
             return None
     
     def detect(self, frame: np.ndarray) -> Optional[ObstacleDetectionResult]:
@@ -152,8 +157,8 @@ class ObstacleDetector:
         try:
             h, w = frame.shape[:2]
             
-            # Try TFLite (pytorch_model) first
-            if self.pytorch_model is not None and self.pytorch_model.interpreter is not None:
+            # Try PyTorch model first
+            if self.pytorch_model is not None and self.pytorch_model.model is not None:
                 detections = self.pytorch_model.detect(frame)
                 obstacles = []
                 for det in detections:

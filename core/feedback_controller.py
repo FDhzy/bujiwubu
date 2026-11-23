@@ -64,6 +64,10 @@ class FeedbackController:
         self._last_warning_time = 0.0
         self._last_direction_time = 0.0
         
+        # Traffic light state tracking
+        self._last_traffic_color = None   # Last announced colour string
+        self._last_traffic_time = 0.0     # Timestamp of last announcement
+        
         # Timing configuration
         self._direction_interval = 3.0  # Seconds between direction announcements
         self._warning_interval = 2.0    # Seconds between warnings
@@ -227,6 +231,51 @@ class FeedbackController:
             elif nav.direction != self._last_direction:
                 self.haptic.vibrate(action.haptic_pattern)
     
+    def process_traffic_light(self, traffic_light_result, announce_interval: float = 5.0):
+        """
+        Announce traffic light colour if changed or interval elapsed.
+
+        Args:
+            traffic_light_result: TrafficLightResult from detector (or None)
+            announce_interval: Minimum seconds between repeated announcements
+                               of the *same* colour.
+        """
+        if traffic_light_result is None:
+            return
+
+        from models.traffic_light_detector import TrafficLightColor
+        color = traffic_light_result.color
+        if color == TrafficLightColor.UNKNOWN:
+            return
+
+        current_time = time.time()
+        color_key = color.value  # "red" / "yellow" / "green"
+
+        # Announce if colour changed OR enough time has passed
+        colour_changed = (color_key != self._last_traffic_color)
+        interval_ok    = (current_time - self._last_traffic_time) > announce_interval
+
+        if not (colour_changed or interval_ok):
+            return
+
+        phrase_key = f"traffic_{color_key}"
+        if color == TrafficLightColor.GREEN:
+            priority = Priority.HIGH
+            haptic = HapticPattern.SUCCESS
+        elif color == TrafficLightColor.RED:
+            priority = Priority.HIGH
+            haptic = HapticPattern.CRITICAL_ALERT
+        else:  # yellow
+            priority = Priority.NORMAL
+            haptic = HapticPattern.PUDDLE_WARNING
+
+        self.audio.speak(phrase_key, priority)
+        self.haptic.vibrate(haptic)
+
+        self._last_traffic_color = color_key
+        self._last_traffic_time  = current_time
+        self.logger.info(f"Traffic light announced: {color_key} (conf={traffic_light_result.confidence:.2f})")
+
     def speak(self, key: str, priority: Priority = Priority.NORMAL):
         """
         Speak a message by key.

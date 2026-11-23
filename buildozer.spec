@@ -13,23 +13,24 @@ package.domain = org.accesstech
 source.dir = .
 
 # (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,tflite,json
+source.include_exts = py,png,jpg,kv,atlas,tflite,onnx,json
 
 # (list) List of inclusions using pattern matching
-source.include_patterns = assets/images/*,assets/models/shoe_recognition/*,data/*,training_checkpoints/obstacle_best.tflite,training_checkpoints/water_model.tflite,training_checkpoints/shoe_model.tflite
+source.include_patterns = assets/*,ui/*.kv
 
 # (list) Source files to exclude (let empty to not exclude anything)
-source.exclude_exts = spec,md,pt,pth,onnx,h5,yaml,txt
+source.exclude_exts = spec,md
 
 # (list) List of directory to exclude (let empty to not exclude anything)
-source.exclude_dirs = tests,bin,.git,__pycache__,venv,training_data,runs,training_checkpoints/obstacle,training_checkpoints/obstacle_onnx2tf,training_checkpoints/shoe_onnx2tf,training_checkpoints/water_onnx2tf,mask_check_samples
+source.exclude_dirs = tests,bin,.git,__pycache__,venv
 
 # (str) Application versioning
 version = 1.0.0
 
 # (list) Application requirements
-# Note: tflite_runtime is used for ML inference on Android
-requirements = python3,kivy==2.2.1,numpy,pillow,opencv,pyjnius,plyer,android
+# Note: Some packages may need recipes in python-for-android
+# Removed win32com and pyttsx3 as they are Windows-only
+requirements = python3,kivy==2.2.1,numpy,pillow,opencv-python,pyjnius,plyer,android
 
 # (str) Custom source folders for requirements
 # requirements.source.kivy = ../../kivy
@@ -245,7 +246,6 @@ android.features = android.hardware.camera,android.hardware.camera.autofocus
 
 # (str) The directory in which python-for-android should look for your own build recipes (if any)
 #p4a.local_recipes =
-p4a.local_recipes = ./p4a_recipes
 
 # (str) Filename to the hook for p4a
 #p4a.hook =

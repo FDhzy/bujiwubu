@@ -48,25 +48,46 @@ class WaterDetector:
         self.threshold = config.water_confidence_threshold
         self.water_class = config.water_class_index
         
-        # Try TFLite water model first (water_model.tflite)
+        # Try YOLOv8 segment model first (highest priority)
         self.pytorch_detector = None
         self.use_cv_fallback = False
         self.model = None
-        
+
+        # ── 优先：YOLOv8 segment 模型 ─────────────────────────────────────────
+        yolo_path = getattr(config, 'yolo_water_model_path',
+                            'training_checkpoints/weights/best.pt')
+        yolo_thresh = getattr(config, 'yolo_water_confidence_threshold', 0.25)
         try:
-            self.logger.info("Loading TFLite water model...")
+            self.logger.info(f"Loading YOLOv8 water model: {yolo_path}")
             self.pytorch_detector = PyTorchWaterDetector(
-                model_path="training_checkpoints/water_model.tflite",
-                threshold=self.threshold
+                model_path=yolo_path,
+                threshold=yolo_thresh,
             )
-            if self.pytorch_detector.interpreter is not None:
-                self.logger.info("✓ TFLite water model loaded successfully")
+            if self.pytorch_detector.model is not None:
+                self.logger.info("✓ YOLOv8 水坑分割模型加载成功")
             else:
-                self.logger.warning("✗ TFLite water model failed to load, falling back...")
+                self.logger.warning("✗ YOLOv8 模型加载失败，尝试旧 PyTorch U-Net...")
                 self.pytorch_detector = None
         except Exception as e:
-            self.logger.warning(f"✗ Failed to load TFLite water model: {e}")
+            self.logger.warning(f"✗ YOLOv8 水坑模型加载异常: {e}")
             self.pytorch_detector = None
+
+        # ── 兜底：旧版 U-Net pth 模型 ─────────────────────────────────────────
+        if self.pytorch_detector is None:
+            try:
+                self.logger.info("Loading PyTorch U-Net water model...")
+                self.pytorch_detector = PyTorchWaterDetector(
+                    model_path="training_checkpoints/water_model_best.pth",
+                    threshold=self.threshold,
+                )
+                if self.pytorch_detector.model is not None:
+                    self.logger.info("✓ PyTorch U-Net 水坑模型加载成功")
+                else:
+                    self.logger.warning("✗ PyTorch U-Net 模型加载失败，将回退 TFLite...")
+                    self.pytorch_detector = None
+            except Exception as e:
+                self.logger.warning(f"✗ PyTorch 模型异常: {e}")
+                self.pytorch_detector = None
         
         # Fall back to TFLite if PyTorch failed
         if self.pytorch_detector is None:
@@ -92,7 +113,7 @@ class WaterDetector:
             self.logger.info("ML model missing, using CV fallback for water detection")
         
         # Summary of which detector is being used
-        pytorch_available = self.pytorch_detector is not None and self.pytorch_detector.interpreter is not None
+        pytorch_available = self.pytorch_detector is not None and self.pytorch_detector.model is not None
         tflite_available = self.model is not None and not isinstance(self.model, DummyModel)
         
         if pytorch_available:
@@ -117,15 +138,15 @@ class WaterDetector:
         """
         try:
             # Try PyTorch detector first if available
-            if self.pytorch_detector is not None and self.pytorch_detector.interpreter is not None:
+            if self.pytorch_detector is not None and self.pytorch_detector.model is not None:
                 result = self.pytorch_detector.detect(frame)
                 if result is not None:
-                    # 过滤小面积误报（覆盖率小于1%视为误报）
-                    if result.coverage_ratio < 0.01:
+                    # 过滤异常面积：覆盖率 < 1% 视为噪点，覆盖率 > 30% 视为误报（大框问题）
+                    h, w = frame.shape[:2]
+                    empty_mask = np.zeros((h, w), dtype=np.uint8)
+                    empty_confidence = np.zeros((h, w), dtype=np.float32)
+                    if result.coverage_ratio < 0.01 or result.coverage_ratio > 0.30:
                         # 返回空结果（无水坑）
-                        h, w = frame.shape[:2]
-                        empty_mask = np.zeros((h, w), dtype=np.uint8)
-                        empty_confidence = np.zeros((h, w), dtype=np.float32)
                         return WaterDetectionResult(
                             mask=empty_mask,
                             confidence=empty_confidence,

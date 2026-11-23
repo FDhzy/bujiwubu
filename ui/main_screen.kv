@@ -23,6 +23,20 @@
         size_hint: 1, 1
         opacity: 1 if root._is_navigating else 0
 
+    # Voice Activation Toggle Button (Top Left Corner)
+    AccessibleButton:
+        id: voice_toggle_btn
+        text: root._voice_btn_text
+        font_name: 'ChineseFont'
+        font_size: sp(18)
+        bold: True
+        background_color: root._voice_btn_color
+        color: 1, 1, 1, 1
+        size_hint: None, None
+        size: dp(130), dp(50)
+        pos_hint: {'x': 0.02, 'top': 0.98}
+        on_release: root.on_toggle_voice_activation()
+
     # Voice Settings Button (Top Right Corner)
     AccessibleButton:
         id: voice_settings_btn

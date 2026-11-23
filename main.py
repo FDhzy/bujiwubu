@@ -1,4 +1,4 @@
-"""
+﻿"""
 Blind Navigation Assistant - Main Application Entry Point
 
 A real-time camera-based navigation assistant for blind users
@@ -220,7 +220,11 @@ class BlindNavigationApp(App):
         self.camera_manager = CameraManager(
             resolution=self.app_config.camera.resolution,
             target_fps=self.app_config.camera.target_fps,
-            max_queue_size=self.app_config.camera.max_queue_size
+            max_queue_size=self.app_config.camera.max_queue_size,
+            camera_index=self.app_config.camera.camera_index,
+            ip_camera_url=self.app_config.camera.ip_camera_url,
+            reconnect_delay=self.app_config.camera.ip_camera_reconnect_delay,
+            max_retries=self.app_config.camera.ip_camera_max_retries,
         )
         
         # Inference engine (handles ML models)
@@ -260,11 +264,10 @@ class BlindNavigationApp(App):
                     language=self.app_config.voice.recognition_language
                 )
                 
-                # Check if voice activation is available
+                # Check if voice activation is available but do NOT auto-start
+                # The user controls it via the toggle button on the main screen
                 if self.voice_activation.is_available():
-                    # Start listening for wake word
-                    self.voice_activation.start_listening()
-                    self.logger.info("Voice activation enabled")
+                    self.logger.info("Voice activation available (not started; use the button to enable)")
                 else:
                     self.logger.warning("Voice activation not available - microphone or speech recognition unavailable")
                     self.voice_activation = None
@@ -274,6 +277,8 @@ class BlindNavigationApp(App):
         
         # Set state to idle
         self.state_manager.set_state(AppState.IDLE)
+            # Bind keyboard events
+            self._bind_keyboard()
         
         self.logger.info("All components initialized")
     
@@ -333,8 +338,8 @@ class BlindNavigationApp(App):
         
         # Start processing loop
         self._processing_active = True
-        # Update FPS to 2 (every 0.5 seconds) for dynamic detection
-        fps = 2
+        # Update FPS to 4 (every 0.25 seconds) for dynamic detection
+        fps = 4
         self._update_event = Clock.schedule_interval(
             self._process_frame, 
             1.0 / fps
@@ -398,14 +403,37 @@ class BlindNavigationApp(App):
             if detection_result is None:
                 return
             
+            # ── 只保留中下区域（帧高度40%以下）的检测结果用于规划和语音播报 ──
+            # 上半部分的障碍物/水坑不会影响路径规划也不触发语音
+            frame_h, frame_w = frame.shape[:2]
+            lower_start_y = frame_h * 0.4  # 中下区域起始行（像素）
+
+            # 过滤障碍物：检测框与中下区域交叠面积占检测框面积 >= 15% 才保留
+            filtered_obstacles = []
+            for obs in detection_result.obstacles:
+                ox, oy, ow, oh = obs.bbox
+                overlap_y0 = max(oy, lower_start_y)
+                overlap_y1 = oy + oh
+                if overlap_y1 > overlap_y0 and ow > 0 and oh > 0:
+                    overlap_ratio = (overlap_y1 - overlap_y0) * ow / (ow * oh)
+                    if overlap_ratio >= 0.15:
+                        filtered_obstacles.append(obs)
+
+            # 过滤水坑 mask：上半部分置零，只留中下区域
+            import numpy as _np
+            filtered_water_mask = detection_result.water_mask.copy() if detection_result.water_mask is not None else None
+            if filtered_water_mask is not None:
+                upper_rows = int(lower_start_y)
+                filtered_water_mask[:upper_rows, :] = 0
+            
             # Estimate distances to hazards
             self.monitor.operation_start("distance_estimation")
             puddle_infos = self.distance_estimator.estimate_puddle_info(
-                detection_result.water_mask,
+                filtered_water_mask,
                 frame.shape[:2]
             )
             obstacle_infos = self.distance_estimator.estimate_obstacle_info(
-                detection_result.obstacles,
+                filtered_obstacles,
                 frame.shape[:2]
             )
             self.monitor.operation_end("distance_estimation")
@@ -413,8 +441,8 @@ class BlindNavigationApp(App):
             # Plan safe path
             self.monitor.operation_start("path_planning")
             navigation = self.path_planner.plan(
-                water_mask=detection_result.water_mask,
-                obstacles=detection_result.obstacles,
+                water_mask=filtered_water_mask,
+                obstacles=filtered_obstacles,
                 frame_shape=frame.shape
             )
             self.monitor.operation_end("path_planning")
@@ -438,6 +466,16 @@ class BlindNavigationApp(App):
                 detection_result, 
                 navigation
             )
+            
+            # Traffic light detection & announcement
+            if self.app_config.traffic_light.enabled:
+                tl = detection_result.traffic_light
+                self.feedback_controller.process_traffic_light(
+                    tl,
+                    announce_interval=self.app_config.traffic_light.announce_interval,
+                )
+                # Update UI status bar with traffic light info
+                self.main_screen.update_traffic_light_status(tl)
             
             # Update state based on safety level
             if navigation.safety_score < self.app_config.path_planning.safety_critical:
@@ -502,3 +540,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

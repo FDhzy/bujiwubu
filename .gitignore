@@ -25,3 +25,7 @@ mask_check_samples/
 pip_packages*/
 # 转换工具
 convert_tflite.zip
+
+# 本地状态与数据集
+/data/shoe_info.json
+/assets/models/*训练数据集*/

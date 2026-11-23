@@ -427,7 +427,7 @@ class ShoeAnalyzer:
                     self.logger.info(f"External model prediction: {shoe_type.value} ({confidence:.2%})")
                     
                     # If confidence is low, fall back to CV method
-                    if confidence < 0.3:
+                    if confidence < 0.15:
                         self.logger.warning("Low confidence, falling back to CV method")
                         shoe_type, confidence = self._detect_shoe_type(image)
                 except Exception as e:

@@ -2,14 +2,20 @@
 Edge TTS 集成模块
 使用微软 Edge 在线语音合成服务
 提供高质量中文语音
-优化版本：使用内存缓存和流式播放减少延迟
+优化版本：
+  1. 启动时从 assets/audio_cache/ 加载预生成 mp3（离线，零延迟）
+  2. 内存 LRU 缓存（运行时合成过的语音）
+  3. 未命中时实时联网合成
 """
 import os
 import io
+import json
+import hashlib
 import tempfile
 import asyncio
 import threading
 import time
+from pathlib import Path
 from typing import Optional, List, Dict, Tuple
 from dataclasses import dataclass
 from collections import OrderedDict
@@ -24,6 +30,10 @@ except ImportError:
     EDGE_TTS_AVAILABLE = False
 
 from utils.logger import get_logger
+
+# 预生成缓存目录（相对于项目根目录）
+_PROJECT_ROOT = Path(__file__).parent.parent
+_PREBUILD_DIR = _PROJECT_ROOT / "assets" / "audio_cache"
 
 
 @dataclass
@@ -53,18 +63,10 @@ class EdgeTTSWrapper:
         VoiceOption("zh-CN-shaanxi-XiaoniNeural", "中文女声-晓妮", "陕西方言女声"),
     ]
     
-    # 常用提示语预合成缓存
-    COMMON_PHRASES = {
-        "准备就绪": "准备就绪。请将摄像头向前",
-        "欢迎": "欢迎来到主界面",
-        "声音设置": "欢迎来到声音设置界面",
-        "已切换": "已切换",
-    }
-    
     def __init__(self, config=None):
         """
         初始化 Edge TTS
-        
+
         Args:
             config: 音频配置对象
         """
@@ -75,40 +77,68 @@ class EdgeTTSWrapper:
         self._stop_requested = False
         self._loop = None
         self._thread = None
-        
-        # 音频缓存 (LRU Cache)
+
+        # 内存 LRU 缓存（运行时合成的音频，不含预生成）
         self._audio_cache: OrderedDict[str, Tuple[np.ndarray, int]] = OrderedDict()
         self._cache_lock = threading.Lock()
-        self._max_cache_size = 20  # 最大缓存数量
-        
-        # 预合成队列
-        self._prewarm_queue = []
-        self._prewarm_thread = None
-        
+        self._max_cache_size = 30
+
+        # 预生成磁盘缓存索引：cache_key -> (audio_data, samplerate)
+        # cache_key 格式与 _get_cache_key() 一致："voice:text"
+        self._prebuild_index: Dict[str, Path] = {}   # cache_key -> mp3 Path
+        self._prebuild_lock = threading.Lock()
+
         if not EDGE_TTS_AVAILABLE:
-            self.logger.warning("Edge TTS not installed. Run: pip install edge-tts soundfile sounddevice numpy")
+            self.logger.warning(
+                "Edge TTS not installed. Run: pip install edge-tts soundfile sounddevice numpy")
             return
-        
-        self.logger.info("Edge TTS initialized (optimized)")
-        
-        # 启动预合成线程
-        self._start_prewarm_thread()
-    
-    def _start_prewarm_thread(self):
-        """启动预合成线程，预合成常用提示语"""
-        def prewarm():
-            time.sleep(2)  # 等待应用启动完成
-            for key, text in self.COMMON_PHRASES.items():
-                if not EDGE_TTS_AVAILABLE:
-                    return
-                try:
-                    self._synthesize_to_cache(text)
-                    self.logger.debug(f"Prewarmed: {key}")
-                except Exception as e:
-                    self.logger.debug(f"Failed to prewarm {key}: {e}")
-        
-        self._prewarm_thread = threading.Thread(target=prewarm, daemon=True)
-        self._prewarm_thread.start()
+
+        # 启动时加载预生成索引
+        self._load_prebuild_index()
+        self.logger.info(
+            f"Edge TTS initialized (optimized, {len(self._prebuild_index)} prebuild entries)")
+
+    def _load_prebuild_index(self, prebuild_dir: Optional[Path] = None):
+        """
+        从磁盘加载预生成索引。
+        读取 assets/audio_cache/index.json，建立 cache_key -> mp3_path 映射。
+        """
+        dir_path = prebuild_dir or _PREBUILD_DIR
+        index_file = dir_path / "index.json"
+        if not index_file.exists():
+            self.logger.info(
+                f"未找到预生成缓存索引: {index_file}  "
+                "（可运行 python prebuild_audio.py 预生成语音）")
+            return
+
+        try:
+            with open(index_file, encoding="utf-8") as f:
+                raw = json.load(f)   # {filename: {"text": ..., "voice": ...}}
+
+            loaded = 0
+            with self._prebuild_lock:
+                self._prebuild_index.clear()
+                for filename, meta in raw.items():
+                    if not isinstance(meta, dict):
+                        continue
+                    mp3_path = dir_path / filename
+                    if not mp3_path.exists():
+                        continue
+                    voice = meta.get("voice", self.current_voice)
+                    text  = meta.get("text", "")
+                    if text:
+                        key = f"{voice}:{text}"
+                        self._prebuild_index[key] = mp3_path
+                        loaded += 1
+
+            self.logger.info(
+                f"预生成缓存索引加载完成: {loaded}/{len(raw)} 条有效")
+        except Exception as e:
+            self.logger.warning(f"加载预生成索引失败: {e}")
+
+    def reload_prebuild_index(self, prebuild_dir: Optional[Path] = None):
+        """切换音色后重新加载预生成索引（供外部调用）。"""
+        self._load_prebuild_index(prebuild_dir)
     
     def is_available(self) -> bool:
         """检查TTS是否可用"""
@@ -122,10 +152,11 @@ class EdgeTTSWrapper:
         """设置当前音色"""
         if self.current_voice != voice_id:
             self.current_voice = voice_id
-            # 切换音色时清空缓存
+            # 切换音色时清空内存缓存，重新加载预生成索引
             with self._cache_lock:
                 self._audio_cache.clear()
-            self.logger.info(f"Voice set to: {voice_id}, cache cleared")
+            self._load_prebuild_index()
+            self.logger.info(f"Voice set to: {voice_id}, caches refreshed")
     
     def set_speech_rate(self, rate: float):
         """设置语速 (0.5 - 2.0)"""
@@ -217,36 +248,53 @@ class EdgeTTSWrapper:
             thread.start()
     
     def _do_speak(self, text: str):
-        """执行语音合成和播放（优化版本）"""
+        """执行语音合成和播放，优先级：预生成磁盘 > 内存LRU > 实时合成"""
         try:
             self._is_speaking = True
             start_time = time.time()
-            
-            # 尝试从缓存获取
-            audio_data = self._get_from_cache(text)
-            
+
+            audio_data = None
+
+            # ① 预生成磁盘缓存（零延迟）
+            cache_key = self._get_cache_key(text)
+            with self._prebuild_lock:
+                mp3_path = self._prebuild_index.get(cache_key)
+            if mp3_path is not None:
+                try:
+                    data, sr = sf.read(str(mp3_path), dtype='float32')
+                    audio_data = (data, sr)
+                    self.logger.debug(f"Prebuild hit: {text[:30]}")
+                except Exception as e:
+                    self.logger.warning(f"预生成文件读取失败: {e}")
+                    audio_data = None
+
+            # ② 内存 LRU 缓存
             if audio_data is None:
-                # 缓存未命中，实时合成
-                self.logger.debug(f"Cache miss for: {text[:30]}...")
+                audio_data = self._get_from_cache(text)
+                if audio_data is not None:
+                    self.logger.debug(f"Memory cache hit: {text[:30]}")
+
+            # ③ 实时联网合成
+            if audio_data is None:
+                self.logger.debug(f"Cache miss, synthesizing: {text[:30]}")
                 audio_data = self._synthesize_to_cache(text)
-            else:
-                self.logger.debug(f"Cache hit for: {text[:30]}...")
-            
+
             if audio_data is None:
                 self.logger.error(f"Failed to synthesize: {text[:50]}")
                 return
-            
+
             data, samplerate = audio_data
             synthesis_time = time.time() - start_time
-            
+
             # 播放语音
             if not self._stop_requested:
                 sd.play(data, samplerate)
                 sd.wait()
-            
+
             total_time = time.time() - start_time
-            self.logger.debug(f"Speech completed in {total_time:.2f}s (synthesis: {synthesis_time:.2f}s)")
-                
+            self.logger.debug(
+                f"Speech done in {total_time:.2f}s (synthesis={synthesis_time:.2f}s): {text[:30]}")
+
         except Exception as e:
             self.logger.error(f"Edge TTS speak error: {e}")
         finally:

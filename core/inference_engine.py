@@ -14,6 +14,7 @@ from utils.performance_monitor import get_monitor
 from models.water_detector import WaterDetector, WaterDetectionResult
 from models.obstacle_detector import ObstacleDetector, ObstacleDetectionResult, BoundingBox
 from models.reflection_analyzer import ReflectionAnalyzer, ReflectionResult
+from models.traffic_light_detector import TrafficLightDetector, TrafficLightResult
 from processing.fusion_processor import FusionProcessor, FusedDetectionResult
 from models.detection_result import DetectionResult
 
@@ -46,6 +47,7 @@ class InferenceEngine:
         self.obstacle_detector = ObstacleDetector(model_config)
         self.reflection_analyzer = ReflectionAnalyzer(reflection_config)
         self.fusion_processor = FusionProcessor()
+        self.traffic_light_detector = TrafficLightDetector()
         
         # Thread pool for parallel inference
         self._executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="Inference")
@@ -84,10 +86,16 @@ class InferenceEngine:
                 self._run_reflection_analysis, frame
             )
             
+            # Run traffic light detection (lightweight, can run in same thread)
+            traffic_light_future = self._executor.submit(
+                self._run_traffic_light_detection, frame
+            )
+            
             # Wait for results
             water_result = water_future.result(timeout=3.0)
             obstacle_result = obstacle_future.result(timeout=3.0)
             reflection_result = reflection_future.result(timeout=3.0)
+            traffic_light_result = traffic_light_future.result(timeout=2.0)
             
             # Fuse results
             fused = self._fuse_results(
@@ -105,7 +113,8 @@ class InferenceEngine:
                 obstacles=fused.obstacles,
                 frame_width=frame_w,
                 frame_height=frame_h,
-                hazard_grid=fused.hazard_grid
+                hazard_grid=fused.hazard_grid,
+                traffic_light=traffic_light_result,
             )
             
         except Exception as e:
@@ -145,6 +154,22 @@ class InferenceEngine:
             return self.reflection_analyzer.analyze(frame)
         except Exception as e:
             self.logger.debug(f"Reflection analysis error: {e}")
+            return None
+
+    def _run_traffic_light_detection(
+        self,
+        frame: np.ndarray
+    ) -> Optional[TrafficLightResult]:
+        """Run traffic light colour detection."""
+        try:
+            result = self.traffic_light_detector.detect(frame)
+            # Return None for UNKNOWN to keep downstream logic clean
+            from models.traffic_light_detector import TrafficLightColor
+            if result.color == TrafficLightColor.UNKNOWN:
+                return None
+            return result
+        except Exception as e:
+            self.logger.debug(f"Traffic light detection error: {e}")
             return None
     
     def _fuse_results(

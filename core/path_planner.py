@@ -120,7 +120,7 @@ class PathPlanner:
         safety_score = self._calculate_safety(hazard_grid, path)
         
         # Determine hazard info
-        hazard_type, hazard_dist = self._analyze_hazards(hazard_grid, water_mask, obstacles)
+        hazard_type, hazard_dist = self._analyze_hazards(hazard_grid, water_mask, obstacles, frame_h)
         
         # Assess puddle severity based on shoe thresholds
         puddle_severity = self._assess_puddle_severity(water_mask, frame_h)
@@ -375,14 +375,33 @@ class PathPlanner:
         
         return max(0.0, min(1.0, safety))
     
+    # 画面下半部分起始比例（与 UI 保持一致，40% 以下视为近前方）
+    LOWER_REGION_START = 0.4
+
+    def _water_in_lower_region(self, water_mask: np.ndarray, frame_h: int) -> bool:
+        """
+        判断水坑是否有像素落在画面下半部分（高度 LOWER_REGION_START 以下）。
+        只有下半部分有水才触发语音播报，避免远处水坑误报。
+        """
+        if water_mask is None or water_mask.size == 0:
+            return False
+        lower_start = int(frame_h * self.LOWER_REGION_START)
+        lower_region = water_mask[lower_start:, :]
+        return bool(np.any(lower_region > 0))
+
     def _analyze_hazards(
         self,
         hazard_grid: np.ndarray,
         water_mask: np.ndarray,
-        obstacles: List[BoundingBox]
+        obstacles: List[BoundingBox],
+        frame_h: int = 0
     ) -> Tuple[str, float]:
         """Analyze hazards to determine type and distance."""
-        has_water = np.any(water_mask > 0)
+        # 只统计画面下半部分的水坑（与蓝框绘制区域保持一致）
+        if frame_h > 0:
+            has_water = self._water_in_lower_region(water_mask, frame_h)
+        else:
+            has_water = np.any(water_mask > 0)
         has_obstacles = len(obstacles) > 0
         
         if has_water and has_obstacles:

@@ -60,7 +60,7 @@ class DetectionProcessor:
             3,   # motorcycle
             5,   # bus
             7,   # truck
-            9,   # traffic light
+            # 9,   # traffic light - disabled (not relevant for pedestrian navigation)
             10,  # fire hydrant
             11,  # stop sign
             13,  # bench

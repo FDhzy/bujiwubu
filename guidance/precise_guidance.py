@@ -1,4 +1,4 @@
-"""
+﻿"""
 Precise guidance generator for detailed navigation instructions.
 Generates step-by-step guidance like "Walk 3 steps forward, then 2 steps left".
 """
@@ -66,20 +66,17 @@ class PreciseGuidanceGenerator:
         # Generate English text
         if distance < 1.0:
             text_en = (
-                f"Warning! Puddle very close, about {diameter:.1f} meters wide. "
-                f"Move {steps_side} steps to the {avoid_direction} immediately."
+                f"Warning! Puddle very close ahead. Move to the {avoid_direction} immediately."
             )
             priority = 4
         elif distance < 2.5:
             text_en = (
-                f"Puddle {distance:.1f} meters ahead. Suggest walking {steps_forward} steps forward, "
-                f"then move {steps_side} steps to the {avoid_direction}."
+                f"Puddle ahead. Please walk forward, then move to the {avoid_direction} to avoid."
             )
             priority = 3
         else:
             text_en = (
-                f"Puddle detected {distance:.1f} meters ahead. Suggest walking {steps_forward} steps forward, "
-                f"then shift {steps_side} steps {avoid_direction}."
+                f"Puddle detected ahead. Please walk forward, then shift to the {avoid_direction}."
             )
             priority = 2
         
@@ -88,18 +85,15 @@ class PreciseGuidanceGenerator:
         
         if distance < 1.0:
             text_zh = (
-                f"注意！水坑非常近，宽约{diameter:.1f}米。"
-                f"请立即向{direction_zh}移动{steps_side}步。"
+                f"注意！前方有水坑非常近。请立即向{direction_zh}绕行。"
             )
         elif distance < 2.5:
             text_zh = (
-                f"前方{distance:.1f}米处有水坑，建议向前走{steps_forward}步，"
-                f"再向{direction_zh}绕行{steps_side}步。"
+                f"前方有水坑，建议向前行走，再向{direction_zh}绕行避开。"
             )
         else:
             text_zh = (
-                f"前方{distance:.1f}米检测到水坑，建议向前走{steps_forward}步，"
-                f"再向{direction_zh}绕行{steps_side}步。"
+                f"前方检测到水坑，建议向前行走，再向{direction_zh}绕行避开。"
             )
         
         return PreciseInstruction(
@@ -162,22 +156,18 @@ class PreciseGuidanceGenerator:
             priority = 4
         elif distance < 3.0:
             text_en = (
-                f"{obj_name.capitalize()} {distance:.1f} meters ahead. "
-                f"Suggest walking {steps_forward} steps forward, then {steps_side} steps {avoid_direction}."
+                f"{obj_name.capitalize()} ahead. Suggest walking {steps_forward} steps forward, then {steps_side} steps {avoid_direction}."
             )
             text_zh = (
-                f"前方{distance:.1f}米处有{obj_name_zh}，建议向前走{steps_forward}步，"
-                f"再向{direction_zh}绕行{steps_side}步。"
+                f"前方有{obj_name_zh}，建议向前走{steps_forward}步，再向{direction_zh}绕行{steps_side}步。"
             )
             priority = 3
         else:
             text_en = (
-                f"{obj_name.capitalize()} detected {distance:.1f} meters ahead. "
-                f"Suggest walking {steps_forward} steps forward, then {steps_side} steps {avoid_direction}."
+                f"{obj_name.capitalize()} detected ahead. Suggest walking {steps_forward} steps forward, then {steps_side} steps {avoid_direction}."
             )
             text_zh = (
-                f"前方{distance:.1f}米检测到{obj_name_zh}，建议向前走{steps_forward}步，"
-                f"再向{direction_zh}绕行{steps_side}步。"
+                f"前方检测到{obj_name_zh}，建议向前走{steps_forward}步，再向{direction_zh}绕行{steps_side}步。"
             )
             priority = 2
         

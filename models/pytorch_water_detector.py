@@ -1,6 +1,7 @@
 """
-水坑检测器 - 基于 TFLite U-Net
-使用 training_checkpoints/water_model.tflite
+水坑检测器 - YOLOv8 segment 任务
+替代原有 U-Net PyTorch 模型。
+接口与原 PyTorchWaterDetector 完全兼容，WaterDetector 无需改动。
 """
 import numpy as np
 import cv2
@@ -10,175 +11,150 @@ from pathlib import Path
 
 from utils.logger import get_logger
 
-# Try to import TFLite runtime
-try:
-    import tflite_runtime.interpreter as tflite
-    TFLITE_AVAILABLE = True
-except ImportError:
-    try:
-        import tensorflow as tf
-        tflite = tf.lite
-        TFLITE_AVAILABLE = True
-    except ImportError:
-        TFLITE_AVAILABLE = False
-        print("Warning: TFLite not available for water detection")
-
 
 @dataclass
 class WaterDetectionResult:
     """Result from water detection."""
-    mask: np.ndarray
-    confidence: np.ndarray
-    coverage_ratio: float
-    num_regions: int
+    mask: np.ndarray        # 二值 mask，1=水坑 0=非水坑
+    confidence: np.ndarray  # 置信度图 (0~1)
+    coverage_ratio: float   # 水坑覆盖率
+    num_regions: int        # 独立水坑区域数
 
 
 class PyTorchWaterDetector:
     """
-    水坑检测器 - 使用 TFLite U-Net 推理
+    YOLOv8 segment 水坑检测器。
+    接口与原 U-Net 版本完全兼容：
+      - detect(frame) -> WaterDetectionResult | None
+      - model 属性（None 表示未加载）
     """
 
-    INPUT_SIZE = 256  # U-Net 输入尺寸
-    MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-    STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)
-
-    def __init__(self, model_path: str = None, threshold: float = 0.15):
+    def __init__(self, model_path: str = None, threshold: float = 0.25):
         """
-        初始化水坑检测器
+        初始化水坑检测器。
 
         Args:
-            model_path: TFLite 模型路径
-            threshold: 检测阈值
+            model_path: YOLOv8 segment best.pt 路径
+            threshold:  掩码置信度阈值
         """
-        self.logger = get_logger("pytorch_water_detector")
-        self.interpreter = None
-        self.input_details = None
-        self.output_details = None
+        self.logger = get_logger("yolov8_water_detector")
+        self.model = None          # ultralytics YOLO 实例
         self.threshold = threshold
 
-        if not TFLITE_AVAILABLE:
-            self.logger.error("TFLite not available")
-            return
+        if model_path and Path(model_path).exists():
+            self._load_model(model_path)
+        else:
+            if model_path:
+                self.logger.warning(f"水坑模型文件不存在: {model_path}")
+            else:
+                self.logger.warning("未指定水坑模型路径")
 
-        # 默认路径
-        if model_path is None:
-            model_path = "training_checkpoints/water_model.tflite"
-
-        self._load_model(model_path)
+    # ── 加载 ──────────────────────────────────────────────────────────────────
 
     def _load_model(self, model_path: str):
-        """加载 TFLite 模型"""
+        """加载 YOLOv8 segment .pt 模型。"""
         try:
-            path = Path(model_path)
-            if not path.exists():
-                self.logger.warning(f"模型不存在: {path}")
-                return
-            self.interpreter = tflite.Interpreter(model_path=str(path))
-            self.interpreter.allocate_tensors()
-            self.input_details = self.interpreter.get_input_details()
-            self.output_details = self.interpreter.get_output_details()
-            self.logger.info(f"TFLite 水坑检测器已加载: {path}")
+            from ultralytics import YOLO
+            self.model = YOLO(model_path)
+            self.logger.info(f"✓ YOLOv8 水坑分割模型已加载: {model_path}")
+        except ImportError:
+            self.logger.error("ultralytics 未安装，请执行: pip install ultralytics")
         except Exception as e:
-            self.logger.error(f"加载 TFLite 水坑模型失败: {e}")
-            self.interpreter = None
+            self.logger.error(f"加载水坑模型失败: {e}")
+            self.model = None
+
+    # ── 推理 ──────────────────────────────────────────────────────────────────
 
     def detect(self, frame: np.ndarray) -> Optional[WaterDetectionResult]:
         """
-        检测水坑
+        检测水坑。
 
         Args:
-            frame: BGR图像 (HWC格式)
-
+            frame: BGR 图像 (HWC 格式，来自 OpenCV)
         Returns:
-            WaterDetectionResult or None
+            WaterDetectionResult 或 None（模型未加载 / 推理出错）
         """
-        if self.interpreter is None:
+        if self.model is None:
             return None
 
         try:
-            original_h, original_w = frame.shape[:2]
+            orig_h, orig_w = frame.shape[:2]
 
-            # 预处理: BGR→RGB, resize, 归一化, CHW, batch
-            img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img_resized = cv2.resize(img_rgb, (self.INPUT_SIZE, self.INPUT_SIZE))
-            img_float = img_resized.astype(np.float32) / 255.0
-            img_norm = (img_float - self.MEAN) / self.STD
-            # HWC → CHW → batch: [1, 3, 256, 256]
-            input_data = np.expand_dims(np.transpose(img_norm, (2, 0, 1)), axis=0)
+            # YOLOv8 segment 推理
+            results = self.model(frame, verbose=False)
 
-            # TFLite 推理
-            self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
-            self.interpreter.invoke()
-            output = self.interpreter.get_tensor(self.output_details[0]['index'])
+            # 合并所有分割掩码为单张 confidence map
+            confidence = np.zeros((orig_h, orig_w), dtype=np.float32)
 
-            # output shape: [1, 1, 256, 256]
-            confidence = output[0, 0]  # shape [256, 256]
-            
-            # 调整大小到原始尺寸
-            confidence = cv2.resize(confidence, (original_w, original_h))
-            
-            # 生成mask
+            for result in results:
+                if result.masks is None:
+                    continue
+
+                # result.masks.data: (N, H', W') tensor，值域 [0,1]
+                masks_tensor = result.masks.data          # (N, H', W')
+                boxes_conf   = result.boxes.conf          # (N,)
+
+                for i in range(len(masks_tensor)):
+                    conf_val = float(boxes_conf[i].item())
+                    if conf_val < self.threshold:
+                        continue
+
+                    # 将掩码 resize 到原始分辨率
+                    m = masks_tensor[i].cpu().numpy()     # (H', W')
+                    m_resized = cv2.resize(
+                        m, (orig_w, orig_h), interpolation=cv2.INTER_LINEAR
+                    )
+                    # 加权叠加（取最大值，避免重叠区域超过 1）
+                    confidence = np.maximum(confidence, m_resized * conf_val)
+
+            # 二值化
             mask = (confidence > self.threshold).astype(np.uint8)
-            
-            # 形态学操作清理
+
+            # 形态学清理：先闭运算填洞，再开运算去噪
             kernel = np.ones((7, 7), np.uint8)
             mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-            
-            # 过滤小面积噪点（小于总面积1%的区域视为误报）
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  kernel)
+
+            # 过滤面积 < 总面积 1% 的碎片区域
             num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(mask)
-            min_area = original_h * original_w * 0.01
-            for label in range(1, num_labels):
-                if stats[label, cv2.CC_STAT_AREA] < min_area:
-                    mask[labels == label] = 0
-            
-            # 计算指标
-            coverage = np.sum(mask) / mask.size
+            min_area = orig_h * orig_w * 0.01
+            for lbl in range(1, num_labels):
+                if stats[lbl, cv2.CC_STAT_AREA] < min_area:
+                    mask[labels == lbl] = 0
+
+            coverage    = float(np.sum(mask)) / float(mask.size)
             num_regions = self._count_regions(mask)
-            
+
             return WaterDetectionResult(
                 mask=mask,
                 confidence=confidence,
                 coverage_ratio=coverage,
-                num_regions=num_regions
+                num_regions=num_regions,
             )
-            
+
         except Exception as e:
-            self.logger.error(f"Water detection error: {e}")
+            self.logger.error(f"水坑检测推理失败: {e}")
             return None
-    
+
+    # ── 辅助 ──────────────────────────────────────────────────────────────────
+
     def _count_regions(self, mask: np.ndarray) -> int:
-        """计算水坑区域数量"""
-        num_labels, _ = cv2.connectedComponents(mask)
-        return num_labels - 1
-    
+        """统计独立水坑区域数量。"""
+        n, _ = cv2.connectedComponents(mask)
+        return n - 1  # 减去背景
+
     def estimate_depth(self, frame: np.ndarray, mask: np.ndarray) -> float:
         """
-        估算水深（简化版）
-        
-        基于颜色和纹理特征估算相对水深
+        根据颜色/亮度特征估算相对水深（0~1）。
+        保留原接口兼容性。
         """
         if np.sum(mask) == 0:
             return 0.0
-        
-        # 提取水坑区域
-        water_region = frame[mask > 0]
-        
-        if len(water_region) == 0:
+        water_pixels = frame[mask > 0]
+        if len(water_pixels) == 0:
             return 0.0
-        
-        # 计算平均亮度（暗的水坑通常更深）
-        avg_brightness = np.mean(water_region)
-        
-        # 计算颜色方差（浑浊的水方差更大）
-        color_variance = np.var(water_region)
-        
-        # 综合估算（简化算法）
-        # 越暗越可能深，但浑浊度也要考虑
-        depth_estimate = (255 - avg_brightness) / 255.0
-        turbidity = min(color_variance / 1000.0, 1.0)
-        
-        # 综合得分
-        depth_score = depth_estimate * 0.7 + turbidity * 0.3
-        
-        return float(depth_score)
+        avg_brightness = float(np.mean(water_pixels))
+        color_variance = float(np.var(water_pixels))
+        depth_est   = (255.0 - avg_brightness) / 255.0
+        turbidity   = min(color_variance / 1000.0, 1.0)
+        return depth_est * 0.7 + turbidity * 0.3
