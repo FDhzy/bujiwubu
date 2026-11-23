@@ -2,13 +2,13 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ 'verify/final-candidate-2026-11-23' ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
@@ -20,7 +20,9 @@ jobs:
           python-version: '3.10'
 
       - name: Restore and verify archived models
-        run: python scripts/restore_models.py
+        run: |
+          python scripts/restore_models.py
+          python -m compileall -q main.py core guidance models processing ui utils
 
       - name: Install system dependencies
         run: |
@@ -75,13 +77,29 @@ jobs:
           echo "=== BUILD COMPLETE ==="
           ls -la bin/ 2>&1 || echo "No bin directory"
 
+      - name: Verify APK exists and contains a manifest
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          files = sorted(Path('bin').glob('*.apk'))
+          if not files:
+              raise SystemExit('No APK produced')
+          for apk in files:
+              with ZipFile(apk) as package:
+                  assert 'AndroidManifest.xml' in package.namelist(), apk
+                  assert any(name.endswith('.dex') for name in package.namelist()), apk
+                  assert package.testzip() is None, apk
+              print(apk, apk.stat().st_size, 'bytes')
+          PY
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: blindnavassist-debug
           path: bin/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Upload build log
         uses: actions/upload-artifact@v4
