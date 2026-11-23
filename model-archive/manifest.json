@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "path": "training_checkpoints/obstacle_best.tflite",
+      "bytes": 6111116,
+      "sha256": "e793f57c54d78f1ec2f77166a7bea556d5b6f6515ad8c105bb55b72c16b1dd90",
+      "parts": []
+    },
+    {
+      "path": "training_checkpoints/shoe_model.tflite",
+      "bytes": 48053884,
+      "sha256": "021c24192e4f526fbeea32af8d67d83c46117ea7b66673e3159218c96bc3c57f",
+      "parts": [
+        {
+          "path": "model-archive/shoe_model.tflite.part-01",
+          "bytes": 12000000,
+          "sha256": "f74927fffe62e64482fe4665c833c47f0066429c648099f957a97ab795d818d3"
+        },
+        {
+          "path": "model-archive/shoe_model.tflite.part-02",
+          "bytes": 12000000,
+          "sha256": "74405906fb4557121a103145045d56c6278c38b51ef9408f0d9613c8996cc9eb"
+        },
+        {
+          "path": "model-archive/shoe_model.tflite.part-03",
+          "bytes": 12000000,
+          "sha256": "d57f07695c7431f35f517327b52b5f58ae39348828db4cc5a2cb5710a9f824a6"
+        },
+        {
+          "path": "model-archive/shoe_model.tflite.part-04",
+          "bytes": 12000000,
+          "sha256": "5aa54cc5d4e1e7fa616eded3fd2336e20c6b168e67f74ff749f061b93dfb9605"
+        },
+        {
+          "path": "model-archive/shoe_model.tflite.part-05",
+          "bytes": 53884,
+          "sha256": "39a5d5e7a897d62d2dda2b437e27aa51179e9c932ff7dea9ec840dda00eb7ed8"
+        }
+      ]
+    },
+    {
+      "path": "training_checkpoints/water_model.tflite",
+      "bytes": 62081316,
+      "sha256": "552c0b8e707a2989c94ac745c3bb925e3184a153f5266eeec4a679e0bd778536",
+      "parts": [
+        {
+          "path": "model-archive/water_model.tflite.part-01",
+          "bytes": 12000000,
+          "sha256": "32a6b6e117b9c1355f22a89b2b24d2d5f4edc9c64f50f8e81cdf208e55b4c785"
+        },
+        {
+          "path": "model-archive/water_model.tflite.part-02",
+          "bytes": 12000000,
+          "sha256": "c41468479c0f610613d22302a32ce011db5968720ded306b90535a3d8fef4066"
+        },
+        {
+          "path": "model-archive/water_model.tflite.part-03",
+          "bytes": 12000000,
+          "sha256": "9baef8dcfaa9b30777dbb1b9c82f6212282d61d4b74fe0e37eca23faafc38cc9"
+        },
+        {
+          "path": "model-archive/water_model.tflite.part-04",
+          "bytes": 12000000,
+          "sha256": "d7a036dee003a56626c3e6a066f5c3c8835a7d2fd1b2b258edea52aaf80f838f"
+        },
+        {
+          "path": "model-archive/water_model.tflite.part-05",
+          "bytes": 12000000,
+          "sha256": "d9b072d16434cf2faa4e69166134c9ec2e98adefb4efde26f5539c6e4b118f3d"
+        },
+        {
+          "path": "model-archive/water_model.tflite.part-06",
+          "bytes": 2081316,
+          "sha256": "bb4870bb1aeaa630d3657c0cd8b03a06022e825d81e80082658b2296b719ccaa"
+        }
+      ]
+    },
+    {
+      "path": "assets/models/deeplabv3_water.tflite",
+      "bytes": 1965296,
+      "sha256": "ac511b6d414913284ecb6e2efd663d917b672fe64153bcdac2acab959b11d76b",
+      "parts": []
+    }
+  ]
+}

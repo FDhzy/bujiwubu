@@ -22,7 +22,7 @@ source.include_patterns = assets/images/*,assets/models/shoe_recognition/*,data/
 source.exclude_exts = spec,md,pt,pth,onnx,h5,yaml,txt
 
 # (list) List of directory to exclude (let empty to not exclude anything)
-source.exclude_dirs = tests,bin,.git,__pycache__,venv,training_data,runs,training_checkpoints/obstacle,training_checkpoints/obstacle_onnx2tf,training_checkpoints/shoe_onnx2tf,training_checkpoints/water_onnx2tf,mask_check_samples
+source.exclude_dirs = tests,bin,.git,__pycache__,venv,training_data,runs,training_checkpoints/obstacle,training_checkpoints/obstacle_onnx2tf,training_checkpoints/shoe_onnx2tf,training_checkpoints/water_onnx2tf,mask_check_samples,model-archive,scripts
 
 # (str) Application versioning
 version = 1.0.0

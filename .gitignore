@@ -25,3 +25,12 @@ mask_check_samples/
 pip_packages*/
 # 转换工具
 convert_tflite.zip
+
+# 本地运行状态、构建输出和原始资料不进仓库
+/data/shoe_info.json
+/assets/models/*训练数据集*/
+/bin/
+
+# 直接随项目保存的小模型；大模型由 scripts/restore_models.py 恢复
+!/training_checkpoints/obstacle_best.tflite
+!/assets/models/deeplabv3_water.tflite

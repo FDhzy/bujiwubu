@@ -1,2 +1,0 @@
-✓ YOLOv8 障碍物检测器已加载: training_checkpoints/obstacle/best.pt
-  类别数: 11

@@ -19,6 +19,9 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Restore and verify archived models
+        run: python scripts/restore_models.py
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
