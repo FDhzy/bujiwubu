@@ -1,0 +1,25 @@
+{
+  "n": 180,
+  "baseline_raw_correct": 104,
+  "baseline_imagenet_correct": 62,
+  "forced_correct": 126,
+  "accepted": 67,
+  "accepted_correct": 55,
+  "per_class": {
+    "0": {
+      "n": 60,
+      "accepted_as": 0,
+      "accepted_correct": 0
+    },
+    "1": {
+      "n": 60,
+      "accepted_as": 0,
+      "accepted_correct": 0
+    },
+    "3": {
+      "n": 60,
+      "accepted_as": 67,
+      "accepted_correct": 55
+    }
+  }
+}

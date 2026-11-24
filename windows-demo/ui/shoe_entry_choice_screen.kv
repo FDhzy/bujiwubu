@@ -1,0 +1,139 @@
+# Kivy UI Layout for Shoe Entry Choice Screen
+# 鞋子录入方式选择界面
+
+<ShoeEntryChoiceScreen>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: 'assets/images/background.png'
+    
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(20)
+        
+        # Top area - Logo/Title section
+        BoxLayout:
+            size_hint_y: 0.25
+            orientation: 'vertical'
+            
+            Widget:
+                size_hint_y: 0.2
+            
+            Label:
+                id: title_label
+                text: "鞋子录入"
+                font_name: 'ChineseFont'
+                font_size: sp(32)
+                bold: True
+                color: 1, 1, 1, 1
+                halign: 'center'
+                valign: 'middle'
+                text_size: self.size
+                padding: dp(10), dp(5)
+                size_hint_y: 0.8
+        
+        # Middle spacer
+        Widget:
+            size_hint_y: 0.05
+        
+        # Two main buttons section
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.55
+            spacing: dp(30)
+            padding: [dp(50), 0, dp(50), 0]
+            
+            EntryChoiceButton:
+                id: camera_entry_btn
+                text: "拍摄录入"
+                font_name: 'ChineseFont'
+                font_size: sp(36)
+                bold: True
+                background_color: 0.93, 0.95, 0.98, 1
+                color: 0.0706, 0.1647, 0.1804, 1
+                size_hint_y: 0.5
+                on_release: root.on_camera_entry()
+                
+            EntryChoiceButton:
+                id: gallery_entry_btn
+                text: "选择录入"
+                font_name: 'ChineseFont'
+                font_size: sp(36)
+                bold: True
+                background_color: 0.93, 0.95, 0.98, 1
+                color: 0.0706, 0.1647, 0.1804, 1
+                size_hint_y: 0.5
+                on_release: root.on_gallery_entry()
+        
+        # Bottom section with exit button
+        BoxLayout:
+            size_hint_y: 0.15
+            orientation: 'horizontal'
+            padding: [0, dp(10), dp(20), dp(20)]
+            
+            # Left spacer
+            Widget:
+                size_hint_x: 0.7
+            
+            # Exit button
+            ExitButton:
+                id: exit_btn
+                text: "退出"
+                font_name: 'ChineseFont'
+                font_size: sp(20)
+                bold: True
+                background_color: 0.8, 0.2, 0.2, 1
+                color: 1, 1, 1, 1
+                size_hint_x: 0.3
+                on_release: root.on_exit()
+
+
+<EntryChoiceButton@Button>:
+    # Large touch target for accessibility
+    size_hint_y: 1
+    background_normal: ''
+    color: 1, 1, 1, 1
+    
+    canvas.before:
+        # Shadow effect
+        Color:
+            rgba: 0, 0, 0, 0.15
+        RoundedRectangle:
+            pos: self.x + dp(2), self.y - dp(4)
+            size: self.size
+            radius: [dp(20)]
+        
+        # Button background
+        Color:
+            rgba: self.background_color if self.background_color else (0.3, 0.3, 0.3, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(20)]
+
+
+<ExitButton@Button>:
+    # Small exit button style
+    background_normal: ''
+    color: 1, 1, 1, 1
+    
+    canvas.before:
+        # Shadow effect
+        Color:
+            rgba: 0, 0, 0, 0.2
+        RoundedRectangle:
+            pos: self.x + dp(1), self.y - dp(2)
+            size: self.size
+            radius: [dp(15)]
+        
+        # Button background (red)
+        Color:
+            rgba: self.background_color if self.background_color else (0.8, 0.2, 0.2, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(15)]

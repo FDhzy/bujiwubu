@@ -1,0 +1,182 @@
+# Kivy UI Layout for Blind Navigation Assistant
+# Designed for accessibility with large touch targets and high contrast
+
+<MainScreen>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: 'assets/images/background.png'
+    
+    # Camera preview (background when navigating)
+    CameraPreview:
+        id: camera_preview
+        size_hint: 1, 1
+        pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+        opacity: 1 if root._is_navigating else 0
+    
+    # Debug overlay
+    DebugOverlay:
+        id: debug_overlay
+        size_hint: 1, 1
+        opacity: 1 if root._is_navigating else 0
+
+    # Voice Settings Button (Top Right Corner)
+    AccessibleButton:
+        id: voice_settings_btn
+        text: "声音设置"
+        font_name: 'ChineseFont'
+        font_size: sp(20)
+        bold: True
+        background_color: 0.2, 0.5, 0.7, 1  # Blue color
+        color: 1, 1, 1, 1
+        size_hint: None, None
+        size: dp(120), dp(50)
+        pos_hint: {'right': 0.98, 'top': 0.98}
+        opacity: 0 if root._is_navigating else 1
+        disabled: root._is_navigating
+        on_release: root.on_voice_settings()
+    
+    # Initial UI (Hidden when navigating)
+    BoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(10)
+        opacity: 0 if root._is_navigating else 1
+        disabled: root._is_navigating
+        
+        # Header Section (Centered)
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.5
+            padding: dp(20)
+            
+            Label:
+                text: "不积洼步"
+                font_name: 'ChineseFont'
+                font_size: sp(48)
+                bold: True
+                halign: 'center'
+                valign: 'bottom'
+                text_size: self.size
+                
+            Label:
+                text: "Stay away from puddles"
+                font_name: 'ChineseFont'
+                font_size: sp(48)
+                bold: True
+                halign: 'center'
+                valign: 'top'
+                text_size: self.size
+        
+        # Spacer
+        Widget:
+            size_hint_y: 0.1
+            
+        # Lower Section (Two vertically arranged buttons)
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.6
+            spacing: dp(40)
+            padding: [dp(50), dp(30), dp(50), dp(50)]
+            
+            AccessibleButton:
+                id: register_shoes_btn
+                text: "录入鞋子"
+                font_name: 'ChineseFont'
+                font_size: sp(36)
+                bold: True
+                background_color: 0.93, 0.95, 0.98, 1
+                color: 0.0706, 0.1647, 0.1804, 1
+                size_hint_y: None
+                height: dp(130)
+                on_release: root.on_register_shoes()
+                
+            AccessibleButton:
+                id: enable_camera_btn
+                text: "开启相机"
+                font_name: 'ChineseFont'
+                font_size: sp(36)
+                bold: True
+                background_color: 0.93, 0.95, 0.98, 1
+                color: 0.0706, 0.1647, 0.1804, 1
+                size_hint_y: None
+                height: dp(130)
+                on_release: root.on_enable_camera()
+
+    # Status label (Top, visible during navigation)
+    Label:
+        id: status_label
+        text: "Ready"
+        font_name: 'ChineseFont'
+        font_size: sp(24)
+        bold: True
+        size_hint: 1, 0.1
+        pos_hint: {'top': 1}
+        opacity: 0.7 if root._is_navigating else 0
+        canvas.before:
+            Color:
+                rgba: 0, 0, 0, 0.5
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+    # Navigation controls (Bottom, visible during navigation)
+    BoxLayout:
+        size_hint: 1, 0.15
+        pos_hint: {'x': 0, 'y': 0}
+        padding: [dp(20), dp(10), dp(20), dp(20)]
+        opacity: 1 if root._is_navigating else 0
+        disabled: not root._is_navigating
+        
+        AccessibleButton:
+            id: exit_navigation_btn
+            text: "退出"
+            font_name: 'ChineseFont'
+            font_size: sp(28)
+            bold: True
+            background_color: 0.9, 0.1, 0.1, 1  # Red
+            on_release: root.on_exit_navigation_click()
+
+
+<AccessibleButton@Button>:
+    # Large touch target for accessibility
+    size_hint_y: 1
+    background_normal: ''
+    color: 1, 1, 1, 1
+    
+    canvas.before:
+        # Shadow effect
+        Color:
+            rgba: 0, 0, 0, 0.15
+        RoundedRectangle:
+            pos: self.x + dp(2), self.y - dp(4)
+            size: self.size
+            radius: [dp(20)]
+        
+        # Button background
+        Color:
+            rgba: self.background_color if self.background_color else (0.3, 0.3, 0.3, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [dp(20)]
+
+
+<CameraPreview@Image>:
+    # Camera feed display
+    allow_stretch: True
+    keep_ratio: True
+
+
+<DebugOverlay@Widget>:
+    # Overlay for debug visualizations
+    canvas:
+        # Placeholder
+        Color:
+            rgba: 0, 0, 0, 0
+        Rectangle:
+            pos: self.pos
+            size: self.size

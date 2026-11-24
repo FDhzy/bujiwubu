@@ -1,0 +1,10 @@
+.venv/
+.kivy/
+__pycache__/
+*.pyc
+*.log
+*.db
+*.db-*
+.env
+data/
+

@@ -24,6 +24,7 @@
 
 | 我想做什么 | 去哪里 | 这个版本的状态 |
 | --- | --- | --- |
+| 运行 Windows 演示 | [安装与复现说明](windows-demo/README.md) | 包含启动器、完整运行模型和独立鞋型入口 |
 | 看主线源码 | [`main`](https://github.com/FDhzy/bujiwubu/tree/main) | 保留原有项目代码与 Android 构建配置；不是最新 Windows 演示包 |
 | 找比赛终版候选、恢复模型 | [终版候选归档](https://github.com/FDhzy/bujiwubu/tree/archive/final-candidate-2026-11-23) | 固定归档；含模型分片、校验清单和恢复脚本 |
 | 看 Windows 鞋型实验 | [鞋型照片建议与对照](https://github.com/FDhzy/bujiwubu/blob/improve/windows-models-2026-11-23/desktop-model-evaluation/README-Model-V2.md) | 仅给照片建议，不自动设置鞋型 |
@@ -33,7 +34,7 @@
 
 ## 怎么运行或复现
 
-**在原 Windows 电脑上演示：**进入桌面的 `bujiwubu-windows-improved`，双击 `Start-Windows-Demo.bat`。保留同级的 `bujiwubu-windows-demo` 文件夹，启动脚本会从那里加载依赖。Windows 完整运行副本没有同步到 GitHub；GitHub 实验分支不能直接替代它。鞋型独立试用入口在桌面的 `bujiwubu-windows-model-v2/Start-Shoe-Photo-Demo.bat`。
+**在 Windows 上运行：**克隆本仓库后，进入 [windows-demo](windows-demo/README.md)，安装 Python 3.10 x64 和项目依赖，再启动演示。不依赖旧电脑桌面文件。
 
 **恢复终版候选的归档模型：**切到终版候选归档，在仓库根目录用 Python 3.10+ 执行 `python scripts/restore_models.py`。脚本按[模型清单](https://github.com/FDhzy/bujiwubu/blob/archive/final-candidate-2026-11-23/model-archive/manifest.json)恢复并校验文件。这里恢复的是比赛候选的模型，不是 Windows 积水 V3 所需的 H5 底层权重。V3 在 GitHub 只保存新分割层及其底层权重校验值；复现需要原本地 H5 和评测数据。
 
