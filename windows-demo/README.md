@@ -13,7 +13,7 @@ cd .\bujiwubu\windows-demo
 
 ## 2. 校验模型、安装并启动
 
-以下命令在含有 `verify_assets.py` 的 `windows-demo` 目录中执行。`python --version` 应显示 `Python 3.10.x`；若 PATH 指向其他 Python，就把下面两处 `python` 换成 `py -3.10`。
+以下命令在含有 `verify_assets.py` 的 `windows-demo` 目录中执行。`python --version` 应显示 `Python 3.10.x`；若 PATH 指向其他 Python，就把下面单独出现的 `python` 换成 `py -3.10`。
 
 ```powershell
 python --version
