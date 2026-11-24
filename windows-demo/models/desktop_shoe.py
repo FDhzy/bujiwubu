@@ -45,7 +45,10 @@ class DesktopShoeSuggestion:
         self.i,self.o=i['index'],o['index']
 
     def suggest(self,bgr):
-        if bgr is None or bgr.ndim!=3 or min(bgr.shape[:2])<40:
+        if bgr is None or bgr.ndim != 3 or bgr.shape[2] != 3 or min(bgr.shape[:2]) < 40:
+            return None, 0.
+        # A flat image contains no shoe shape. Reject it before using the calibrated classifier.
+        if not np.any(np.ptp(bgr, axis=(0, 1))):
             return None, 0.
         preds=[]
         for view in get_views(bgr):

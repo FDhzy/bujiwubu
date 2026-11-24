@@ -6,6 +6,7 @@ from main import BlindNavigationApp, setup_logger, set_debug_mode
 from kivy.clock import Clock
 import numpy as np
 from models.pytorch_shoe_model import PyTorchShoeModel
+from models.desktop_shoe import DesktopShoeSuggestion
 import logging
 setup_logger(level=logging.INFO)
 set_debug_mode(True)
@@ -36,6 +37,8 @@ def verify(_):
   assert wa is not None and wa.mask.shape==frame.shape[:2]
   st,conf=shoe.predict(frame)
   assert 0 < conf <= 1
+  photo = DesktopShoeSuggestion('training_checkpoints/shoe_model.tflite', 'shoe-params.json')
+  assert photo.suggest(np.full((128, 128, 3), 127, dtype=np.uint8)) == (None, 0.0)
   res=app.inference_engine.process_frame(frame)
   assert res is not None
   app.main_screen.update_preview(frame)

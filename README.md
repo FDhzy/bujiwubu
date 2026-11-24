@@ -25,18 +25,19 @@
 | 我想做什么 | 去哪里 | 这个版本的状态 |
 | --- | --- | --- |
 | 运行 Windows 演示 | [安装与复现说明](windows-demo/README.md) | 包含启动器、完整运行模型和独立鞋型入口 |
-| 看主线源码 | [`main`](https://github.com/FDhzy/bujiwubu/tree/main) | 保留原有项目代码与 Android 构建配置；不是最新 Windows 演示包 |
+| 看主线源码 | [`main`](https://github.com/FDhzy/bujiwubu/tree/main) | 含主线源码、Android 构建配置和独立 Windows 演示 |
 | 找比赛终版候选、恢复模型 | [终版候选归档](https://github.com/FDhzy/bujiwubu/tree/archive/final-candidate-2026-11-23) | 固定归档；含模型分片、校验清单和恢复脚本 |
 | 看 Windows 鞋型实验 | [鞋型照片建议与对照](https://github.com/FDhzy/bujiwubu/blob/improve/windows-models-2026-11-23/desktop-model-evaluation/README-Model-V2.md) | 仅给照片建议，不自动设置鞋型 |
 | 看积水 V3 权重和评估 | [积水 V3 实验目录](https://github.com/FDhzy/bujiwubu/tree/improve/windows-models-2026-11-23/desktop-model-evaluation/water-v3) | 实验候选，未接入当前演示 |
 | 对照赛时回退源码 | [回退源码归档](https://github.com/FDhzy/bujiwubu/tree/archive/rollback-source-2026-11-23) | 历史快照，有已知语法问题，不是可运行发布版 |
+| 下载历史训练权重 | [私有 Release](https://github.com/FDhzy/bujiwubu/releases/tag/archive-training-checkpoints-2026-11-24) | 四个 ZIP 与 SHA-256 清单；Windows 演示不需要下载 |
 | 查 Android 打包验证 | [独立验证分支](https://github.com/FDhzy/bujiwubu/tree/verify/final-candidate-2026-11-23) · [构建记录](https://github.com/FDhzy/bujiwubu/actions/runs/45183317656) | 未生成经验证的 APK；本轮不继续打包 |
 
 ## 怎么运行或复现
 
 **在 Windows 上运行：**克隆本仓库后，进入 [windows-demo](windows-demo/README.md)，安装 Python 3.10 x64 和项目依赖，再启动演示。不依赖旧电脑桌面文件。
 
-**恢复终版候选的归档模型：**切到终版候选归档，在仓库根目录用 Python 3.10+ 执行 `python scripts/restore_models.py`。脚本按[模型清单](https://github.com/FDhzy/bujiwubu/blob/archive/final-candidate-2026-11-23/model-archive/manifest.json)恢复并校验文件。这里恢复的是比赛候选的模型，不是 Windows 积水 V3 所需的 H5 底层权重。V3 在 GitHub 只保存新分割层及其底层权重校验值；复现需要原本地 H5 和评测数据。
+**恢复终版候选的归档模型：**切到终版候选归档，在仓库根目录用 Python 3.10+ 执行 `python scripts/restore_models.py`。脚本按[模型清单](https://github.com/FDhzy/bujiwubu/blob/archive/final-candidate-2026-11-23/model-archive/manifest.json)恢复并校验文件。这里恢复的是比赛候选的模型，不是 Windows 积水 V3 所需的 H5 底层权重。V3 的实验分割层在实验分支，底层 H5 已归档至 windows-demo/training_checkpoints/water_model_best.h5；重新计算评估指标仍需原图片与标签。
 
 ## 主线代码导航
 
