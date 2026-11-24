@@ -1,6 +1,6 @@
 # 不积洼步（Blind Navigation Assistant）
 
-> 本项目曾参加魔搭 AI Hackathon Tour 高校联赛赛道 3「小有可为」公益应用。
+> 本项目为 **2026 年初参赛作品**，参加魔搭社区（ModelScope）与 Datawhale 发起的 **AI Hackathon Tour 2026 高校联赛**，赛道 3「小有可为」公益应用。该届全国总决赛于 **2026 年 3 月 21 日**在南京举行，见[主办方赛事记录](https://www.modelscope.cn/events/179)。
 
 ## 一、项目概述
 
