@@ -45,4 +45,4 @@
 - [`ui/`](ui/) · [`guidance/`](guidance/)：界面与提示逻辑。
 - [`buildozer.spec`](buildozer.spec)：Android 构建配置。
 
-实验分支存放实验代码、模型参数及评测记录。历史归档只用于恢复与对照。照片、训练数据、个人配置和运行日志不随实验提交。
+[归档索引](project-archive/README.md)列出历史工具、实验以及未纳入仓库的资料。Windows 演示已从 GitHub 重新克隆并通过合成帧检查；未经现场摄像头或安卓真机验证。

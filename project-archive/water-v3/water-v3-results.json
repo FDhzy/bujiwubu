@@ -1,0 +1,58 @@
+{
+  "chosen_on_tuning_only": {
+    "n_positive": 20,
+    "n_dry": 4,
+    "miou": 0.4629152033394691,
+    "precision": 0.23322458726241577,
+    "recall": 0.8480498659527672,
+    "miss": 0,
+    "dry_fp": 0,
+    "dry_area": 0.0
+  },
+  "threshold": 0.7,
+  "min_area": 0.01,
+  "matched_holdout": {
+    "baseline": {
+      "n_positive": 40,
+      "n_dry": 18,
+      "miou": 0.4099455594169708,
+      "precision": 0.2072079340951513,
+      "recall": 0.7418345046198989,
+      "miss": 0,
+      "dry_fp": 18,
+      "dry_area": 0.4716158492476852
+    },
+    "candidate": {
+      "n_positive": 40,
+      "n_dry": 18,
+      "miou": 0.3659317025378875,
+      "precision": 0.2533664438552597,
+      "recall": 0.6704930806040266,
+      "miss": 5,
+      "dry_fp": 2,
+      "dry_area": 0.017959346064814814
+    }
+  },
+  "extra_positive_holdout": {
+    "baseline": {
+      "n_positive": 30,
+      "n_dry": 0,
+      "miou": 0.5632501182148101,
+      "precision": 0.3468865614618329,
+      "recall": 0.9104478834196944,
+      "miss": 0,
+      "dry_fp": 0,
+      "dry_area": 0.0
+    },
+    "candidate": {
+      "n_positive": 30,
+      "n_dry": 0,
+      "miou": 0.531990979737295,
+      "precision": 0.3805523359419691,
+      "recall": 0.9104673325785695,
+      "miss": 3,
+      "dry_fp": 0,
+      "dry_area": 0.0
+    }
+  }
+}

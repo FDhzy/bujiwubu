@@ -20,7 +20,7 @@ if (-not (Test-Path -LiteralPath '.venv\Scripts\python.exe')) {
 $python = Join-Path $PSScriptRoot '.venv\Scripts\python.exe'
 & $python -c "import struct,sys; assert sys.version_info[:2] == (3,10) and struct.calcsize('P') == 8, 'Use 64-bit Python 3.10'"
 if ($LASTEXITCODE) { throw 'Python 3.10 x64 required' }
-& $python -m pip install -r requirements-windows.txt
+& $python -m pip install -r requirements-windows-lock.txt
 if ($LASTEXITCODE) { throw 'Dependency installation failed' }
 & $python verify_assets.py
 if ($LASTEXITCODE) { throw 'Model verification failed. Fetch the actual model files before starting.' }
